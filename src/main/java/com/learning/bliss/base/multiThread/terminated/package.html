@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<style type="text/css">
+    a:link,a:visited{
+        text-decoration:none;  /*超链接无下划线*/
+    }
+</style>
+<head>
+    <meta charset="UTF-8">
+    <title>线程终止</title>
+</head>
+<h3><a style="color:#ffb915;" href="../package.html"><em>返回</em></a></h3>
+<body>
+<h3>线程终止</h3>
+<ol>
+    <li>线程终止的3种方法</li>
+    <ol>
+        <li><strong>stop()<em style="color:#4e9fee;">（弃用）</em>：</strong>stop()终止线程，破坏线程安全（强行将程序中断，无法保证线程的原子性），JDK不建议使用。
+            <ul>
+                <li>
+                    调用 stop() 方法会立刻停止 run() 方法中剩余的全部工作，包括在 catch 或 finally 语句中的，并抛出ThreadDeath异常(通常情况下此异常不需要显示的捕获)，因此可能会导致一些清理性的工作的得不到完成，如文件，数据库等的关闭。
+                </li>
+                <li>
+                    调用 stop() 方法会立即释放该线程所持有的所有的锁，导致数据得不到同步，出现数据不一致的问题。
+                </li>
+            </ul>
+        </li>
+        <li><strong>标志位终止线程：</strong>使用退出标志，使线程正常退出，也就是当 run() 方法完成后线程中止。</li>
+        <li><strong>interrupt()：</strong>使用Interrupt()终止线程，线程安全，推荐使用。
+            <ul>
+                <li>
+                    调用 interrupt() 方法仅仅是在当前线程中打一个停止的标记，并不是真的停止线程，如果希望线程在中断后停止，就需调用isInterrupted()或者interrupted()判断是该线程是否被标记中断，如果是则跳出程序
+                </li>
+                <li>
+                    当抛出InterruptedException中断异常时，Java虚拟机会先将该线程的中断标识位清除，然后抛出InterruptedException，此时调用isInterrupted()方法将会返回false
+                </li>
+            </ul>
+        </li>
+    </ol>
+</ol>
+</body>
+</html>

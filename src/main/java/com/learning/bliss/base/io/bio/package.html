@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<style type="text/css">
+    a:link, a:visited {
+        text-decoration: none; /*超链接无下划线*/
+    }
+
+    .zhihui p {
+        font-size: 1px;
+        color: #918F8E;
+    }
+
+    .suojin {
+        text-indent: 2em
+    }
+</style>
+<head>
+    <meta charset="UTF-8">
+    <title>阻塞流（BIO）</title>
+</head>
+<h3><a style="color:#ffb915;" href="../package.html"><em>返回</em></a></h3>
+<body>
+<h3>阻塞流（BIO）</h3>
+<ol>
+    <li>File类</li>
+    <ul>
+        <li>文件和目录路径名的抽象表示。<strong>File 类只能操作文件的属性，文件的内容是不能操作的</strong></li>
+        <li>构造方法：<br></li>
+        <ul>
+            <li>public File(String pathname) ：通过将给定的路径名字符串转换为抽象路径名来创建新的 File实例。</li>
+            <li>public File(String parent, String child) ：从父路径名字符串和子路径名字符串创建新的 File实例。</li>
+            <li>public File(File parent, String child) ：从父抽象路径名和子路径名字符串创建新的 File实例。</li>
+        </ul>
+        <li>分隔符：<br></li>
+        <ul>
+            <li><strong>File.separator（UNIX：“/”，windows：“\”）</strong> 同一路径中目录的分隔符，其实取的是FileSystem中实现类的getSeparator()方法
+            </li>
+            <div class="zhihui"><p>
+                FileSystem：本地文件系统抽象的程序包专用抽象类，因java是平台无关的语言，所以为了屏蔽不同操作系统间文件系统的差异，所以不同系统的JDK统一都实现了FileSystem接口，
+                子类实例通过DefaultFileSystem.getFileSystem()来获取，windows系统中返回的是WinNTFileSystem实例</p></div>
+            <li><strong>File.pathSeparator（“;”）</strong>多个路径间的分隔符；</li>
+        </ul>
+        <li>File类的常用方法：<br></li>
+        <ol>
+            <li>创建</li>
+            <ul>
+                <li>boolean createNewFile()；创建文件，路径不存在抛IOException异常，文件已存在返回false</li>
+                <li>boolean mkdir()；创建子目录，如果上一级目录不存在，则返回false；如果已存在和子目录名相同的文件名，则返回false；如果所创建的目录已存在，则返回false</li>
+                <li>boolean mkdirs()；创建多级目录，如果所创建的目录已存在，则返回false</li>
+            </ul>
+            <li>删除</li>
+            <ul>
+                <li>boolean delete()；删除文件或目录（只删除子目录），如果表示目录，则目录下必须为空，否则返回false。</li>
+                <li>boolean deleteOnExit()；请求在虚拟机终止时删除此抽象路径名表示的文件或目录<strong>（仅在正常终止虚拟机时才尝试删除）</strong>>。文件（或目录）以与注册时相反的顺序删除。
+                    <strong>一旦请求删除，就无法取消请求，因此，应谨慎使用此方法。</strong></li>
+            </ul>
+            <li>判断</li>
+            <ul>
+                <li>boolean canExecute()；判断文件是否可执行</li>
+                <li>boolean canRead()；判断文件是否可读</li>
+                <li>boolean canWrite()；判断文件是否可写</li>
+                <li>boolean exists()；判断文件或目录是否存在</li>
+                <li>boolean isDirectory()；判断此路径是否为一个目录</li>
+                <li>boolean isFile()；判断是否为一个文件</li>
+                <li>boolean isHidden()；判断是否为隐藏文件</li>
+                <li>boolean isAbsolute()；判断是否是绝对路径 文件不存在也能判断</li>
+            </ul>
+            <li>获取</li>
+            <ul>
+                <li>String getName()；如果File为目录，则为最下一级的目录名，如果File为文件，则为文件名</li>
+                <li>String getPath()；如果File为目录，则为路径名字符串（相对或者绝对路径取决于File创建时的路径）。如果File为文件，则为文件所在的路径以及文件名的组合Path</li>
+                <li>String getAbsolutePath()；相对于getPath()而言，返回此File的绝对形式</li>
+                <li>String getParent()；获取父目录表示的文件或目录，如不存在，则返回null</li>
+                <li>long lastModified()；获取最后一次修改的时间</li>
+                <li>long length()；获取文件长度。</li>
+                <li>boolean renameTo(File f)；修改文件名</li>
+                <li>String[] list()；返回一个字符串数组，命名由此抽象路径名表示的目录中的文件和目录。</li>
+                <li>String[] list(FilenameFilter filter)；返回一个字符串数组，命名由此抽象路径名表示的目录中满足指定过滤器的文件和目录。</li>
+            </ul>
+        </ol>
+        　
+    </ul>
+    <li>流的分类</li>
+    <ul>
+        <li>根据流向分为输入流和输出流</li>
+        <li>根据传输数据单位分为字节流和字符流</li>
+        <li>根据功能分为节点流和包装流</li>
+        <div class="zhihui"><p>
+            节点流（介质流）：可以从或向一个特定的地方(节点)读写数据。如FileReader、FileWrite。<br>
+            处理流（包装流）：是对一个已存在的流的连接和封装，通过所封装的流的功能调用实现数据读写。如BufferedReader.处理流的构造方法总是要带一个其他的流对象做参数。一个流对象经过其他流的多次包装，称为流的链接。<br>
+            <Strong>注意：程序中打开的文件 IO 资源不属于内存里的资源，垃圾回收机制无法回收该资源。如果不关闭该资源，那么磁盘的文件将一直被程序引用着，不能删除也不能更改。所以应该手动调用 close()
+                方法关闭流资源</Strong>
+        </p></div>
+        <img src="5624bea160f.jpeg" alt="Pulpit rock" width="550" height="300">
+        <img src="45f6add4455.jpeg" alt="Pulpit rock" width="550" height="300">
+    </ul>
+    <li>字节输入流</li>
+    <ul>
+        <li>InputStream 是所有的输入字节流的父类，它是一个抽象类。</li>
+        <li>ByteArrayInputStream、StringBufferInputStream、FileInputStream 是三种基本的介质流，它们分别从Byte 数组、StringBuffer、和本地文件中读取数据。
+            PipedInputStream 是从与其它线程共用的管道中读取数据，与Piped 相关的知识后续单独介绍。
+        </li>
+        <li>ObjectInputStream 和所有FilterInputStream的子类都是装饰流（装饰器模式的主角）。意思是FileInputStream类可以通过一个String路径名创建一个对象，
+            FileInputStream(String name)。而DataInputStream必须装饰一个类才能返回一个对象，DataInputStream(InputStream in)
+        </li>
+    </ul>
+    <li>字节输出流</li>
+    <div class="zhihui"><p>写文件时不用创建文件目录以及空文件。</p></div>
+    <ul>
+        <li>OutputStream 是所有的输出字节流的父类，它是一个抽象类。</li>
+        <li>ByteArrayOutputStream、FileOutputStream是两种基本的介质流，它们分别向Byte 数组、和本地文件中写入数据。
+            PipedOutputStream 是向与其它线程共用的管道中写入数据
+        </li>
+        <li>ObjectOutputStream 和所有FilterOutputStream的子类都是装饰流。</li>
+        <li>
+            ZipOutputStream：zipoutputStream通常是封装一个FileOutputStream，然后在每写入一个文件之前，需要先调用一次putNextEntry()，set入文件条目（zipOutputStream.putNextEntry(new
+            ZipEntry(outFile.getName()))，
+            相当于文件目录,压缩多个文件时putNextEntry多个ZipEntry对象），然后使用write写入byte[]类型的数据,当写入完毕的时候使用colseEntry来结束这个文件的打包
+        </li>
+    </ul>
+    <li>字符输入流</li>
+    <ul>
+        <li>Reader 是所有的输入字符流的父类，它是一个抽象类</li>
+        <li>CharReader、StringReader是两种基本的介质流，它们分别将Char 数组、String中读取数据。PipedReader 是从与其它线程共用的管道中读取数据</li>
+        <li>BufferedReader 很明显就是一个装饰器，它和其子类负责装饰其它Reader 对象</li>
+        <li>FilterReader 是所有自定义具体装饰流的父类，其子类PushbackReader 对Reader 对象进行装饰，会增加一个行号</li>
+        <li>InputStreamReader 是一个连接字节流和字符流的桥梁，它将字节流转变为字符流。FileReader可以说是一个达到此功能、常用的工具类，在其源代码中明显使用了将FileInputStream
+            转变为Reader 的方法。
+            我们可以从这个类中得到一定的技巧。Reader 中各个类的用途和使用方法基本和InputStream 中的类使用一致。后面会有Reader 与InputStream 的对应关系
+        </li>
+    </ul>
+    <li>字符输出流</li>
+    <ul>
+        <li>Writer 是所有的输出字符流的父类，它是一个抽象类</li>
+        <li>CharArrayWriter、StringWriter 是两种基本的介质流，它们分别向Char 数组、String 中写入数据</li>
+        <li>PipedWriter 是向与其它线程共用的管道中写入数据</li>
+        <li>BufferedWriter 是一个装饰器为Writer 提供缓冲功能</li>
+        <li>PrintWriter 和PrintStream 极其类似，功能和使用也非常相似</li>
+        <li>OutputStreamWriter 是OutputStream 到Writer 转换的桥梁，它的子类FileWriter 其实就是一个实现此功能的具体类（具体可以研究一SourceCode）</li>
+    </ul>
+    <li>RandomAccessFile类</li>
+    <ol>
+        <li>该对象并不是流体系中的一员，其封装了字节流，同时还封装了一个缓冲区（字符数组），通过内部的指针来操作字符数组中的数据。该对象特点：</li>
+        <ul>
+            <li>
+                <div class="zhihui"><p>该对象只能操作文件，所以构造函数接收两种类型的参数：a.字符串文件路径；b.File对象</p></div>
+            </li>
+            <li>
+                <div class="zhihui"><p>该对象既可以对文件进行读操作，也能进行写操作，在进行对象实例化时可指定操作模式(r,rw)</p></div>
+            </li>
+            <li>
+                <div class="zhihui"><p>
+                    该对象在实例化时，如果要操作的文件不存在，会自动创建；如果文件存在，写数据未指定位置，会从头开始写，即覆盖原有的内容。可以用于多线程下载或多个线程同时写数据到文件</p></div>
+            </li>
+        </ul>
+        <li>RandomAccessFile定义了四种模式：r、rw、rwd、rws</li>
+        <ul>
+            <li>r：以只读的方式打开文本，也就意味着不能用write来操作文件</li>
+            <li>rw：读操作和写操作都是允许的，调用write()方法时不更新文件的修改时间，只有当流关闭时，才更新</li>
+            <li>rws：每当进行写操作，同步的刷新到磁盘，刷新内容和元数据，较”rw“，调用write()方法时就更新文件的修改时间</li>
+            <li>rwd：每当进行写操作，同步的刷新到磁盘，刷新内容较”rws“，调用write()方法时就更新文件的修改时间，流关闭时更新访问时间</li>
+        </ul>
+        <li>常用方法：</li>
+        <ul>
+            <li>seek：指定文件的光标位置，通俗点说就是指定你的光标位置，然后下次读文件数据的时候从该位置读取。
+            <li>getFilePointer：我们注意到这是一个long类型的返回值，字面意思就是返回当前的文件光标位置。这样方便我们后面读取插入。</li>
+            <li>length：毫无疑问的方法，文件的长度，返回long类型。注意它并不会受光标的影响。只会反应客观的文本长度。</li>
+            <li>read()、read(byte[] b)、read(byte[] b,int off,int len) off指byte数组的开始位置，写入len长的byte数组的内容</li>
+            <li>readDouble()、readFloat()、readBoolean()、readInt()、readLong()、readShort()、readByte()、readChar()
+                这些方法都是去read每一个字符，个人感觉就是返回他们的ASCII码、当然如果专家们有异议可以指出，我测试的时候至少是这么感觉得。
+                大家也可以自己试一下。
+                比如readLong就是要求你的文本内容必须有八个字符，不然会报错。
+                伴随着也就是
+                writeDouble() writeFloat() writeBoolean() writeInt()
+                writeLong() writeShort() writeByte() writeChar()
+            </li>
+            <li>readFully(byte[] b):
+                这个方法的作用就是将文本中的内容填满这个缓冲区b。如果缓冲b不能被填满，那么读取流的过程将被阻塞，如果发现是流的结尾，那么会抛出异常。这个过程就比较像“凑齐一车人在发车，不然不走”。
+            </li>
+            <li>getChannel：它返回的就是nio通信中的file的唯一channel</li>
+            <li>skipBytes(int n)：跳过n字节的位置，相对于当前的point。</li>
+        </ul>
+    </ol>
+    <li>序列化与反序列化（对象流）</li>
+    <ol>
+        <li>对象序列化就是把一个对象变为二进制数据流的一种方法。</li>
+        <li>一个类要想被序列化，就行必须实现java.io.Serializable接口。虽然这个接口中没有任何方法，就如同之前的cloneable接口一样。
+            实现了这个接口之后，就表示这个类具有被序列化的能力。
+        </li>
+        <ul>
+            <li>序列化</li>
+            <ul>
+                <li>ObjectOutputStream oos= new ObjectOutputStream(new FileOutputStream(file));<br/>
+                    oos.writeObject(newPerson("rollen", 20));
+                </li>
+            </ul>
+            <li>反序列化</li>
+            <ul>
+                <li>
+                    步骤：ObjectInputStream input = new ObjectInputStream(new FileInputStream(file));<br/>
+                    input.readObject()
+                </li>
+            </ul>
+            <li>自定义序列化</li>
+            <ul>
+                <li>被Serializable接口声明的类的对象的属性都将被序列化，但是如果想自定义序列化的内容的时候，就需要实现Externalizable接口。<br/>
+                    当一个类要使用Externalizable这个接口的时候，这个类中必须要有一个无参的构造函数，如果没有的话，在构造的时候会产生异常，这是因为在反序列话的时候会默认调用无参的构造函数。</li>
+                <li>transient关键字<br/>
+                    1）一旦变量被transient修饰，变量将不再是对象持久化的一部分，该变量内容在序列化后无法获得访问。<br/>
+                    2）transient关键字只能修饰变量，而不能修饰方法和类。注意，本地变量是不能被transient关键字修饰的。变量如果是用户自定义类变量，则该类需要实现Serializable接口。<br/>
+                    3）被transient关键字修饰的变量不再能被序列化，一个静态变量不管是否被transient修饰，均不能被序列化。<br/>
+                </li>
+            </ul>
+
+
+        </ul>
+    </ol>
+    <li>随机访问文件流</li>
+    <ul>
+        <li>
+        </li>
+    </ul>
+</ol>
+<div class="suoyin"><a style="color:#1CFF65;" href="https://www.cnblogs.com/QQ846300233/p/6046388.html">参考博客</a></div>
+</body>
+</html>

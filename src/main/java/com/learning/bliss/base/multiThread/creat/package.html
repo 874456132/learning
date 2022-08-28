@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<style type="text/css">
+    a:link,a:visited{
+        text-decoration:none;  /*超链接无下划线*/
+    }
+</style>
+<head>
+    <meta charset="UTF-8">
+    <title>线程的创建</title>
+</head>
+<h3><a style="color:#ffb915;" href="../package.html"><em>返回</em></a></h3>
+<body>
+<h3>线程的创建</h3>
+<ol>
+    <li>线程创建的三种方法:</li>
+    <ul>
+        <li>创建一个线程，最简单的方法是创建一个实现 Runnable 接口的类。<strong>本质上是实现了run()方法</strong></li>
+        <li>创建一个线程的第二种方法是继承 Thread 类，<strong>本质上是重写run()方法</strong>。
+            该方法尽管被列为一种多线程实现方式，实际上也是实现了 Runnable 接口的一个实例（Thread实现的是Runnable接口）。
+        </li>
+        <li>创建一个线程，第三种方法是实现Callable接口，实际上是FutureTask对象实现了RunnableFuture的run()方法{同样是通过start()启动，
+            随后系统调用该run()方法，run()方法中调用call()方法，call()方法内部调用Executors.call()方法，将线程交给Executors执行}，<strong>此创建线程较前两个优势在于可以抛出异步线程异常，并响应执行结果</strong>
+        </li>
+    </ul>
+    <li>start()与run()方法区别</li>
+    <ul>
+        <li>
+            调用线程的start()方法来启动线程，真正实现了多线程运行（同步）。启动一个线程实际是请求Java虚拟机运行相应的线程，
+            而这个线程何时能够运行是由线程调度器决定的。start()调用结束只是表明程序已经将运行线程的申请提交给了虚拟机。
+        </li>
+        <li>
+            不显式调用run()方法，run()称为线程体，此方法相当于线程的任务处理逻辑的入口方法。它包含了要执行的这个线程的内容，
+            它由Java虚拟机在运行相应线程时自动调用。当应用程序显示调用此方法时，线程之间顺序执行，没有达到多线程同步执行的目的
+        </li>
+    </ul>
+</ol>
+</body>
+</html>
