@@ -1,12 +1,12 @@
 package com.learning.bliss.redis;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -19,10 +19,10 @@ import javax.servlet.http.HttpServletRequest;
 @RestController
 public class RedisController {
 
-    /*@Autowired
-    private StringRedisTemplate stringRedisTemplate;
-    @Autowired
+    @Resource
     private RedisTemplate redisTemplate;
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
 
     @Value("${server.port}")
     private String port;
@@ -32,5 +32,5 @@ public class RedisController {
         stringRedisTemplate.opsForValue().set("aaa", "111");
         System.out.println(stringRedisTemplate.opsForValue().get("aaa"));
 
-    }*/
+    }
 }

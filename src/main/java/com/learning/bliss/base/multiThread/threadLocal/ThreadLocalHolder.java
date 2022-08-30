@@ -3,9 +3,7 @@ package com.learning.bliss.base.multiThread.threadLocal;
 import com.alibaba.fastjson.JSONObject;
 import lombok.SneakyThrows;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
@@ -66,15 +64,13 @@ public final class ThreadLocalHolder {
         }
         return null;
     }
-
+@SneakyThrows
     public static Object getMap(Thread t) {
         Method m = null;
-        try {
+        //try {
             m = holder.getClass().getDeclaredMethod("getMap", Thread.class);
             return m.invoke(holder, Thread.currentThread());
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
-        }
-        return null;
+       //
+        //return null;
     }
 }
