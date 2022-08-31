@@ -1,44 +1,59 @@
 package com.learning.bliss.redis.jedis;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import redis.clients.jedis.JedisPoolConfig;
 
 /**
- * 其实本类完全是spring-boot-autoconfigure自动加载机制的复制，实际只需要配置application.yml即可
- *
+ * 集群模式（cluster）通过jedis连接redis配置类
+ * 其实本类完全是spring-boot-autoconfigure自动加载机制的复制，实际只需要配置application.properties 即可
+ * <p>
  * spring redis节点配置查看 {@link org.springframework.boot.autoconfigure.data.redis.RedisProperties}
  * SpringBoot自动配置机制查看{@link org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration}
+ *
  * @Author: xuexc
  * @Date: 2022/8/8 23:22
  * @Version 0.1
  */
-/*@Configuration(proxyBeanMethods = false)
-//@EnableConfigurationProperties(RedisProperties.class)
+//@Configuration(proxyBeanMethods = false)
+@EnableConfigurationProperties(RedisProperties.class)
 @ConditionalOnProperty(name = "spring.redis.client-type", havingValue = "jedis", matchIfMissing = true)
 public class JedisConfig {
 
 
-    *//**
-     * 构建JedisPoolConfig对象
+    /**
+     * 构建RedisClusterConfiguration对象
+     *
      * @param redisProperties
      * @return
-     *//*
+     */
     @Bean
-    public JedisPoolConfig getJedisPoolConfig(RedisProperties redisProperties){
+    public RedisClusterConfiguration redisClusterConfiguration(RedisProperties redisProperties) {
+        RedisProperties.Cluster cluster = redisProperties.getCluster();
+        RedisClusterConfiguration config = new RedisClusterConfiguration(cluster.getNodes());
+        config.setMaxRedirects(cluster.getMaxRedirects());
+        config.setPassword(redisProperties.getPassword());
+        return config;
+    }
+
+
+    /**
+     * 构建JedisPoolConfig对象
+     *
+     * @param redisProperties
+     * @return
+     */
+    @Bean
+    public JedisPoolConfig getJedisPoolConfig(RedisProperties redisProperties) {
         RedisProperties.Pool pool = redisProperties.getJedis().getPool();
         JedisPoolConfig config = new JedisPoolConfig();
         //最大连接数
@@ -58,38 +73,27 @@ public class JedisConfig {
         return config;
     }
 
-    *//**
-     * 构建RedisClusterConfiguration对象
-     * @param redisProperties
-     * @return
-     *//*
-    @Bean
-    public RedisClusterConfiguration redisClusterConfiguration(RedisProperties redisProperties){
-        RedisProperties.Cluster cluster = redisProperties.getCluster();
-        RedisClusterConfiguration config = new RedisClusterConfiguration(cluster.getNodes());
-        config.setMaxRedirects(cluster.getMaxRedirects());
-        config.setPassword(redisProperties.getPassword());
-        return config;
-    }
 
-    *//**
+
+    /**
      * 构建jedis连接工厂（对象）
+     *
      * @param redisClusterConfiguration
      * @param jedisPoolConfig
      * @return
-     *//*
+     */
     @Bean
     public JedisConnectionFactory jedisConnectionFactory(RedisClusterConfiguration redisClusterConfiguration, JedisPoolConfig jedisPoolConfig) {
-            // 集群模式
+        // 集群模式
         JedisConnectionFactory factory = new JedisConnectionFactory(redisClusterConfiguration, jedisPoolConfig);
         return factory;
     }
 
-    *//**
+    /**
      * 实例化 RedisTemplate 对象
      *
      * @return RedisTemplate<String, Object>
-     *//*
+     */
     @Bean
     @ConditionalOnSingleCandidate(RedisConnectionFactory.class)
     public RedisTemplate redisTemplate(RedisConnectionFactory redisConnectionFactory) {
@@ -98,6 +102,11 @@ public class JedisConfig {
         return template;
     }
 
+    /**
+     * 实例化 stringRedisTemplate 对象
+     *
+     * @return RedisTemplate<String, Object>
+     */
     @Bean
     @ConditionalOnSingleCandidate(RedisConnectionFactory.class)
     public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
@@ -106,4 +115,4 @@ public class JedisConfig {
         return template;
     }
 
-}*/
+}
