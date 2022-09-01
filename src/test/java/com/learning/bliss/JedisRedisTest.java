@@ -4,25 +4,24 @@ import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
 /**
- * 使用依赖spring-redis-data自动连接redis
- *
  * @Author xuexc
  * @Date 2021/12/8 14:37
  * @Version 1.0
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest
-@EnableAutoConfiguration
 public class JedisRedisTest {
 
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
     @Test
     public void testRedis(){
