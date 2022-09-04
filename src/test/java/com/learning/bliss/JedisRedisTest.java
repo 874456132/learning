@@ -35,7 +35,7 @@ public class JedisRedisTest {
     public void testCache(){
         queryUser("1");
     }
-    @Cacheable(cacheManager = "cacheManager", cacheNames = "redisCache", value = "USER:", key="#userId")
+    @Cacheable(cacheNames = "redisCache", value = "USER:", key="#userId")
     public User queryUser(String userId) {
         User user = new User();
         user.setUserId("1");

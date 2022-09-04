@@ -36,6 +36,12 @@
             <scope>compile</scope>
         </dependency>
 
+        <!-- 缓存 start-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+        <!-- 缓存 end-->
 
         <!-- development tools  start -->
         <dependency>
