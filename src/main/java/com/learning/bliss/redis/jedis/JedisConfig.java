@@ -5,7 +5,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandi
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
@@ -15,7 +14,7 @@ import redis.clients.jedis.JedisPoolConfig;
 
 /**
  * 集群模式（cluster）通过jedis连接redis配置类
- * 其实本类完全是spring-boot-autoconfigure自动加载机制的复制，实际只需要配置application.properties 即可
+ * 其实不用写此类，本类完全是spring-boot-autocigure自动加载机制的复制，实际只需要配置application.properties 即可
  * <p>
  * spring redis节点配置查看 {@link org.springframework.boot.autoconfigure.data.redis.RedisProperties}
  * SpringBoot自动配置机制查看{@link org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration}
@@ -114,5 +113,12 @@ public class JedisConfig {
         template.setConnectionFactory(redisConnectionFactory);
         return template;
     }
+
+    /*Redis 缓存管理器*/
+    /*@Bean(name = "redisCache")
+    public CacheManager cacheManager(RedisTemplate redisTemplate) {
+        RedisCacheManager redisCache = new RedisCacheManager(redisTemplate);
+        return redisCache;
+    }*/
 
 }
