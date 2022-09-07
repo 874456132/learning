@@ -8,8 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.cache.CacheManagerCustomizers;
 import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
+import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
@@ -46,7 +45,8 @@ import java.util.Objects;
  */
 @Profile("standalone")
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties(RedisProperties.class)
+@EnableConfigurationProperties({RedisProperties.class, CacheProperties.class})
+@ConditionalOnBean(CacheManagerCustomizers.class)
 @ConditionalOnProperty(name = "spring.redis.client-type", havingValue = "jedis", matchIfMissing = true)
 public class JedisStandaloneConfig {
 
@@ -146,6 +146,7 @@ public class JedisStandaloneConfig {
 
     /*Redis 缓存管理器*/
     @Bean
+    @ConditionalOnMissingBean(CacheManager.class)
     public RedisCacheManager cacheManager(CacheProperties properties, RedisConnectionFactory factory) {
         // 分别创建String和JSON格式序列化对象，对缓存数据key和value进行转换
         RedisCacheWriter redisCacheWriter = RedisCacheWriter.nonLockingRedisCacheWriter(Objects.requireNonNull(factory));
@@ -168,7 +169,7 @@ public class JedisStandaloneConfig {
 
 
     /**
-     * 复制org.springframework.boot.autoconfigure.cache.RedisCacheConfiguration逻辑代码
+     * 复制 {@link org.springframework.boot.autoconfigure.cache.RedisCacheConfiguration}逻辑代码
      * 本人觉得这种写法比较冗余
      * @param cacheProperties
      * @param cacheManagerCustomizers
@@ -178,6 +179,7 @@ public class JedisStandaloneConfig {
      * @return
      */
     @Bean
+    @ConditionalOnMissingBean(CacheManager.class)
     RedisCacheManager cacheManager(CacheProperties cacheProperties, CacheManagerCustomizers cacheManagerCustomizers,
                                    ObjectProvider<RedisCacheConfiguration> redisCacheConfiguration,
                                    ObjectProvider<RedisCacheManagerBuilderCustomizer> redisCacheManagerBuilderCustomizers,
