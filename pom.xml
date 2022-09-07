@@ -30,11 +30,11 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
             <scope>compile</scope>
         </dependency>
-        <!--<dependency>
+        <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
             <scope>compile</scope>
-        </dependency>-->
+        </dependency>
 
 
         <!-- development tools  start -->

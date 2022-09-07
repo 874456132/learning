@@ -5,9 +5,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandi
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -24,8 +26,8 @@ import redis.clients.jedis.JedisPoolConfig;
  * @Date: 2022/8/8 23:22
  * @Version 0.1
  */
-//@Configuration(proxyBeanMethods = false)
 @Profile("cluster")
+@Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(RedisProperties.class)
 @ConditionalOnProperty(name = "spring.redis.client-type", havingValue = "jedis", matchIfMissing = true)
 public class JedisClusterConfig {
@@ -41,8 +43,10 @@ public class JedisClusterConfig {
     public RedisClusterConfiguration redisClusterConfiguration(RedisProperties redisProperties) {
         RedisProperties.Cluster cluster = redisProperties.getCluster();
         RedisClusterConfiguration config = new RedisClusterConfiguration(cluster.getNodes());
+        config.setUsername(redisProperties.getUsername());
+        config.setPassword(RedisPassword.of(redisProperties.getPassword()));
+        //最大重定向次数
         config.setMaxRedirects(cluster.getMaxRedirects());
-        config.setPassword(redisProperties.getPassword());
         return config;
     }
 
@@ -86,6 +90,10 @@ public class JedisClusterConfig {
     @Bean
     public JedisConnectionFactory jedisConnectionFactory(RedisClusterConfiguration redisClusterConfiguration, JedisPoolConfig jedisPoolConfig) {
         // 集群模式
+        //默认指定8个核心线程数的队列
+        //JedisConnectionFactory factory = new JedisConnectionFactory(redisClusterConfiguration);
+
+        // 使用配置的线程池大小
         JedisConnectionFactory factory = new JedisConnectionFactory(redisClusterConfiguration, jedisPoolConfig);
         return factory;
     }

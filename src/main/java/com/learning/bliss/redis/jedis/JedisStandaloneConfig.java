@@ -3,8 +3,11 @@ package com.learning.bliss.redis.jedis;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.cache.CacheManagerCustomizers;
 import org.springframework.boot.autoconfigure.cache.CacheProperties;
+import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
@@ -16,15 +19,18 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.cache.RedisCacheWriter;
-import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.serializer.*;
-import redis.clients.jedis.JedisPoolConfig;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -46,8 +52,9 @@ public class JedisStandaloneConfig {
 
     @Autowired
     private RedisTemplate redisTemplate;
+
     /**
-     * 构建RedisClusterConfiguration对象
+     * 构建RedisStandaloneConfiguration对象
      *
      * @param redisProperties
      * @return
@@ -102,7 +109,7 @@ public class JedisStandaloneConfig {
         om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
         // 指定序列化输入的类型，类必须是非final修饰的，final修饰的类，比如String,Integer等会跑出异常
         //om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
-        om.activateDefaultTyping(om.getPolymorphicTypeValidator(),ObjectMapper.DefaultTyping.NON_FINAL);
+        om.activateDefaultTyping(om.getPolymorphicTypeValidator(), ObjectMapper.DefaultTyping.NON_FINAL);
         jacksonSeial.setObjectMapper(om);
 
         //使用StringRedisSerializer来序列化和反序列化redis的key值
@@ -139,12 +146,67 @@ public class JedisStandaloneConfig {
 
     /*Redis 缓存管理器*/
     @Bean
-    public RedisCacheManager cacheManager(CacheProperties properties, RedisTemplate redisTemplate) {
+    public RedisCacheManager cacheManager(CacheProperties properties, RedisConnectionFactory factory) {
         // 分别创建String和JSON格式序列化对象，对缓存数据key和value进行转换
-        RedisCacheWriter redisCacheWriter = RedisCacheWriter.nonLockingRedisCacheWriter(Objects.requireNonNull(redisTemplate.getConnectionFactory()));
+        RedisCacheWriter redisCacheWriter = RedisCacheWriter.nonLockingRedisCacheWriter(Objects.requireNonNull(factory));
 
         RedisSerializer<String> strSerializer = new StringRedisSerializer();
-        Jackson2JsonRedisSerializer<Object> jacksonSeial = new Jackson2JsonRedisSerializer<Object>(Object.class);
+        Jackson2JsonRedisSerializer<Object> jacksonSeial = new Jackson2JsonRedisSerializer<>(Object.class);
+        // 解决查询缓存转换异常的问题
+        ObjectMapper om = new ObjectMapper();
+        om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+        // 指定序列化输入的类型，类必须是非final修饰的，final修饰的类，比如String,Integer等会跑出异常
+        //om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+        jacksonSeial.setObjectMapper(om);
+        // 定制缓存数据序列化方式及时效
+        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig().entryTtl(properties.getRedis().getTimeToLive())
+                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(strSerializer))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jacksonSeial))
+                .disableCachingNullValues();
+        return new RedisCacheManager(redisCacheWriter, config);
+    }
+
+
+    /**
+     * 复制org.springframework.boot.autoconfigure.cache.RedisCacheConfiguration逻辑代码
+     * 本人觉得这种写法比较冗余
+     * @param cacheProperties
+     * @param cacheManagerCustomizers
+     * @param redisCacheConfiguration
+     * @param redisCacheManagerBuilderCustomizers
+     * @param redisConnectionFactory
+     * @return
+     */
+    @Bean
+    RedisCacheManager cacheManager(CacheProperties cacheProperties, CacheManagerCustomizers cacheManagerCustomizers,
+                                   ObjectProvider<RedisCacheConfiguration> redisCacheConfiguration,
+                                   ObjectProvider<RedisCacheManagerBuilderCustomizer> redisCacheManagerBuilderCustomizers,
+                                   RedisConnectionFactory redisConnectionFactory) {
+        RedisCacheManager.RedisCacheManagerBuilder builder = RedisCacheManager.builder(redisConnectionFactory).cacheDefaults(
+                determineConfiguration(cacheProperties, redisCacheConfiguration));
+
+        List<String> cacheNames = cacheProperties.getCacheNames();
+        if (!cacheNames.isEmpty()) {
+            builder.initialCacheNames(new LinkedHashSet<>(cacheNames));
+        }
+        if (cacheProperties.getRedis().isEnableStatistics()) {
+            builder.enableStatistics();
+        }
+        redisCacheManagerBuilderCustomizers.orderedStream().forEach((customizer) -> customizer.customize(builder));
+        return cacheManagerCustomizers.customize(builder.build());
+    }
+
+    private RedisCacheConfiguration determineConfiguration(
+            CacheProperties cacheProperties,
+            ObjectProvider<RedisCacheConfiguration> redisCacheConfiguration) {
+        return redisCacheConfiguration.getIfAvailable(() -> createConfiguration(cacheProperties));
+    }
+
+    private RedisCacheConfiguration createConfiguration(CacheProperties cacheProperties) {
+        CacheProperties.Redis redisProperties = cacheProperties.getRedis();
+        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig();
+
+        Jackson2JsonRedisSerializer<Object> jacksonSeial = new Jackson2JsonRedisSerializer<>(Object.class);
         // 解决查询缓存转换异常的问题
         ObjectMapper om = new ObjectMapper();
         om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
@@ -152,12 +214,20 @@ public class JedisStandaloneConfig {
         //om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
         jacksonSeial.setObjectMapper(om);
 
-        // 定制缓存数据序列化方式及时效
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig().entryTtl(properties.getRedis().getTimeToLive())
-                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(strSerializer))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jacksonSeial))
-                .disableCachingNullValues();
-        return new RedisCacheManager(redisCacheWriter,config);
+        config = config.serializeValuesWith(
+                RedisSerializationContext.SerializationPair.fromSerializer(jacksonSeial));
+        if (redisProperties.getTimeToLive() != null) {
+            config = config.entryTtl(redisProperties.getTimeToLive());
+        }
+        if (redisProperties.getKeyPrefix() != null) {
+            config = config.prefixCacheNameWith(redisProperties.getKeyPrefix());
+        }
+        if (!redisProperties.isCacheNullValues()) {
+            config = config.disableCachingNullValues();
+        }
+        if (!redisProperties.isUseKeyPrefix()) {
+            config = config.disableKeyPrefix();
+        }
+        return config;
     }
-
 }
