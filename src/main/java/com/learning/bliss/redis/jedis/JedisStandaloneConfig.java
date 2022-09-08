@@ -46,7 +46,6 @@ import java.util.Objects;
 @Profile("standalone")
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({RedisProperties.class, CacheProperties.class})
-@ConditionalOnBean(CacheManagerCustomizers.class)
 @ConditionalOnProperty(name = "spring.redis.client-type", havingValue = "jedis", matchIfMissing = true)
 public class JedisStandaloneConfig {
 
@@ -77,6 +76,7 @@ public class JedisStandaloneConfig {
      * @return
      */
     @Bean
+    @ConditionalOnSingleCandidate(RedisConnectionFactory.class)
     public JedisConnectionFactory jedisConnectionFactory(RedisStandaloneConfiguration redisStandaloneConfiguration) {
         /*从JedisConnectionFactory的构造函数看
         public JedisConnectionFactory(RedisStandaloneConfiguration standaloneConfig) {
@@ -96,7 +96,7 @@ public class JedisStandaloneConfig {
      * @return RedisTemplate<String, Object>
      */
     @Bean
-    @ConditionalOnSingleCandidate(RedisConnectionFactory.class)
+    @ConditionalOnSingleCandidate(RedisTemplate.class)
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
         // 配置连接工厂
         redisTemplate.setConnectionFactory(factory);
@@ -132,7 +132,7 @@ public class JedisStandaloneConfig {
      * @return RedisTemplate<String, Object>
      */
     @Bean
-    @ConditionalOnSingleCandidate(RedisConnectionFactory.class)
+    @ConditionalOnSingleCandidate(StringRedisTemplate.class)
     public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
         StringRedisTemplate template = new StringRedisTemplate();
         template.setConnectionFactory(redisConnectionFactory);
