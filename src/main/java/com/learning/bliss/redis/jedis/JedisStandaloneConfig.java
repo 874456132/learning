@@ -45,12 +45,9 @@ import java.util.Objects;
  */
 @Profile("standalone")
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties({RedisProperties.class, CacheProperties.class})
+@EnableConfigurationProperties(RedisProperties.class)
 @ConditionalOnProperty(name = "spring.redis.client-type", havingValue = "jedis", matchIfMissing = true)
 public class JedisStandaloneConfig {
-
-    @Autowired
-    private RedisTemplate redisTemplate;
 
     /**
      * 构建RedisStandaloneConfiguration对象
@@ -59,6 +56,7 @@ public class JedisStandaloneConfig {
      * @return
      */
     @Bean
+    @ConditionalOnSingleCandidate(RedisStandaloneConfiguration.class)
     public RedisStandaloneConfiguration redisStandaloneConfiguration(RedisProperties redisProperties) {
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
         config.setHostName(redisProperties.getHost());
@@ -90,134 +88,12 @@ public class JedisStandaloneConfig {
         return factory;
     }
 
-    /**
-     * 实例化 RedisTemplate 对象
-     *
-     * @return RedisTemplate<String, Object>
-     */
     @Bean
-    @ConditionalOnSingleCandidate(RedisTemplate.class)
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
-        // 配置连接工厂
-        redisTemplate.setConnectionFactory(factory);
-        //使用Jackson2JsonRedisSerializer来序列化和反序列化redis的value值（默认使用JDK的序列化方式）
-        Jackson2JsonRedisSerializer jacksonSeial = new Jackson2JsonRedisSerializer(Object.class);
-
-
-        ObjectMapper om = new ObjectMapper();
-        // 指定要序列化的域，field,get和set,以及修饰符范围，ANY是都有包括private和public
-        om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-        // 指定序列化输入的类型，类必须是非final修饰的，final修饰的类，比如String,Integer等会跑出异常
-        //om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
-        om.activateDefaultTyping(om.getPolymorphicTypeValidator(), ObjectMapper.DefaultTyping.NON_FINAL);
-        jacksonSeial.setObjectMapper(om);
-
-        //使用StringRedisSerializer来序列化和反序列化redis的key值
-        redisTemplate.setKeySerializer(new StringRedisSerializer());
-        // 值采用json序列化
-        redisTemplate.setValueSerializer(jacksonSeial);
-
-        // 设置hash key 和value序列化模式
-        redisTemplate.setHashKeySerializer(new StringRedisSerializer());
-        redisTemplate.setHashValueSerializer(jacksonSeial);
-        // 设置支持事物
-        redisTemplate.setEnableTransactionSupport(true);
-        redisTemplate.afterPropertiesSet();
-        return redisTemplate;
-    }
-
-    /**
-     * 实例化 stringRedisTemplate 对象
-     *
-     * @return RedisTemplate<String, Object>
-     */
-    @Bean
-    @ConditionalOnSingleCandidate(StringRedisTemplate.class)
-    public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
-        StringRedisTemplate template = new StringRedisTemplate();
-        template.setConnectionFactory(redisConnectionFactory);
-
-        //使用StringRedisSerializer来序列化和反序列化redis的key值
-        redisTemplate.setKeySerializer(new StringRedisSerializer());
-        // 值采用json序列化
-        redisTemplate.setValueSerializer(new StringRedisSerializer());
-        return template;
-    }
-
-    /*Redis 缓存管理器*/
-    @Bean
-    @ConditionalOnMissingBean(CacheManager.class)
-    public RedisCacheManager cacheManager(CacheProperties properties, RedisConnectionFactory factory) {
-        // 分别创建String和JSON格式序列化对象，对缓存数据key和value进行转换
-        RedisCacheWriter redisCacheWriter = RedisCacheWriter.nonLockingRedisCacheWriter(Objects.requireNonNull(factory));
-
-        RedisSerializer<String> strSerializer = new StringRedisSerializer();
-        Jackson2JsonRedisSerializer<Object> jacksonSeial = new Jackson2JsonRedisSerializer<>(Object.class);
-        // 解决查询缓存转换异常的问题
-        ObjectMapper om = new ObjectMapper();
-        om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-        // 指定序列化输入的类型，类必须是非final修饰的，final修饰的类，比如String,Integer等会跑出异常
-        //om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
-        jacksonSeial.setObjectMapper(om);
-        // 定制缓存数据序列化方式及时效
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig().entryTtl(properties.getRedis().getTimeToLive())
-                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(strSerializer))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jacksonSeial))
-                .disableCachingNullValues();
-        return new RedisCacheManager(redisCacheWriter, config);
-    }
-
-
-    /**
-     * 复制 {@link org.springframework.boot.autoconfigure.cache.RedisCacheConfiguration}逻辑代码
-     * 本人觉得这种写法比较冗余
-     * @param cacheProperties
-     * @param cacheManagerCustomizers
-     * @param redisCacheConfiguration
-     * @param redisCacheManagerBuilderCustomizers
-     * @param redisConnectionFactory
-     * @return
-     */
-    @Bean
-    @ConditionalOnMissingBean(CacheManager.class)
-    RedisCacheManager cacheManager(CacheProperties cacheProperties, CacheManagerCustomizers cacheManagerCustomizers,
-                                   ObjectProvider<RedisCacheConfiguration> redisCacheConfiguration,
-                                   ObjectProvider<RedisCacheManagerBuilderCustomizer> redisCacheManagerBuilderCustomizers,
-                                   RedisConnectionFactory redisConnectionFactory) {
-        RedisCacheManager.RedisCacheManagerBuilder builder = RedisCacheManager.builder(redisConnectionFactory).cacheDefaults(
-                determineConfiguration(cacheProperties, redisCacheConfiguration));
-
-        List<String> cacheNames = cacheProperties.getCacheNames();
-        if (!cacheNames.isEmpty()) {
-            builder.initialCacheNames(new LinkedHashSet<>(cacheNames));
-        }
-        if (cacheProperties.getRedis().isEnableStatistics()) {
-            builder.enableStatistics();
-        }
-        redisCacheManagerBuilderCustomizers.orderedStream().forEach((customizer) -> customizer.customize(builder));
-        return cacheManagerCustomizers.customize(builder.build());
-    }
-
-    private RedisCacheConfiguration determineConfiguration(
-            CacheProperties cacheProperties,
-            ObjectProvider<RedisCacheConfiguration> redisCacheConfiguration) {
-        return redisCacheConfiguration.getIfAvailable(() -> createConfiguration(cacheProperties));
-    }
-
-    private RedisCacheConfiguration createConfiguration(CacheProperties cacheProperties) {
+    @ConditionalOnSingleCandidate(RedisCacheConfiguration.class)
+    public RedisCacheConfiguration createConfiguration(CacheProperties cacheProperties) {
         CacheProperties.Redis redisProperties = cacheProperties.getRedis();
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig();
 
-        Jackson2JsonRedisSerializer<Object> jacksonSeial = new Jackson2JsonRedisSerializer<>(Object.class);
-        // 解决查询缓存转换异常的问题
-        ObjectMapper om = new ObjectMapper();
-        om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-        // 指定序列化输入的类型，类必须是非final修饰的，final修饰的类，比如String,Integer等会跑出异常
-        //om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
-        jacksonSeial.setObjectMapper(om);
-
-        config = config.serializeValuesWith(
-                RedisSerializationContext.SerializationPair.fromSerializer(jacksonSeial));
         if (redisProperties.getTimeToLive() != null) {
             config = config.entryTtl(redisProperties.getTimeToLive());
         }
