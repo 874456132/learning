@@ -3,8 +3,8 @@ package com.learning.bliss.redis.jedis;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.learning.bliss.redis.jedis.config.JedisStandaloneConfig;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.cache.CacheManagerCustomizers;
 import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
@@ -29,18 +29,15 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import javax.annotation.Resource;
 import java.util.Objects;
 
 /**
- * standalone mode 单机模式配置  通过jedis连接redis配置类
+ * 通过jedis连接redis配置类
  * 其实不用写此类，本类完全是spring-boot-autocigure自动加载机制的复制，实际只需要配置application.properties 即可
  * <p>
  * spring redis节点配置查看 {@link RedisProperties}
  * SpringBoot自动配置机制查看{@link org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration}
- *
- * @Author: xuexc
- * @Date: 2022/8/8 23:22
- * @Version 0.1
  */
 @Profile("standalone")
 @Configuration(proxyBeanMethods = false)
@@ -49,9 +46,9 @@ import java.util.Objects;
 @ConditionalOnProperty(name = "spring.redis.client-type", havingValue = "jedis", matchIfMissing = true)
 public class RedisManager {
 
-    @Autowired
-    private RedisTemplate redisTemplate;
-    @Autowired
+    @Resource
+    private RedisTemplate<String, Object> redisTemplate;
+    @Resource
     private StringRedisTemplate stringRedisTemplate;
 
 
@@ -66,7 +63,7 @@ public class RedisManager {
         // 配置连接工厂
         redisTemplate.setConnectionFactory(factory);
         //使用Jackson2JsonRedisSerializer来序列化和反序列化redis的value值（默认使用JDK的序列化方式）
-        Jackson2JsonRedisSerializer jacksonSeial = new Jackson2JsonRedisSerializer(Object.class);
+        Jackson2JsonRedisSerializer<Object> jacksonSeial = new Jackson2JsonRedisSerializer<>(Object.class);
 
 
         ObjectMapper om = new ObjectMapper();
@@ -78,12 +75,14 @@ public class RedisManager {
         jacksonSeial.setObjectMapper(om);
 
         //使用StringRedisSerializer来序列化和反序列化redis的key值
-        redisTemplate.setKeySerializer(new StringRedisSerializer());
+        RedisSerializer<String> serializerStringKey = new StringRedisSerializer();
+        redisTemplate.setKeySerializer(serializerStringKey);
         // 值采用json序列化
         redisTemplate.setValueSerializer(jacksonSeial);
 
         // 设置hash key 和value序列化模式
-        redisTemplate.setHashKeySerializer(new StringRedisSerializer());
+        RedisSerializer<String> serializerHashKey = new StringRedisSerializer();
+        redisTemplate.setHashKeySerializer(serializerHashKey);
         redisTemplate.setHashValueSerializer(jacksonSeial);
         // 设置支持事物
         redisTemplate.setEnableTransactionSupport(true);
@@ -102,13 +101,17 @@ public class RedisManager {
         stringRedisTemplate.setConnectionFactory(redisConnectionFactory);
 
         //使用StringRedisSerializer来序列化和反序列化redis的key值
-        stringRedisTemplate.setKeySerializer(new StringRedisSerializer());
+        RedisSerializer<String> serializerStringKey = new StringRedisSerializer();
+        stringRedisTemplate.setKeySerializer(serializerStringKey);
         // 值采用json序列化
-        stringRedisTemplate.setValueSerializer(new StringRedisSerializer());
+        RedisSerializer<String> serializerStringValue = new StringRedisSerializer();
+        stringRedisTemplate.setValueSerializer(serializerStringValue);
         return stringRedisTemplate;
     }
 
-    /*Redis 缓存管理器*/
+    /**
+     * Redis 缓存管理器
+     */
     @Bean
     @ConditionalOnSingleCandidate(CacheManager.class)
     public RedisCacheManager cacheManager(RedisCacheConfiguration redisCacheConfiguration, RedisConnectionFactory factory) {
@@ -134,11 +137,12 @@ public class RedisManager {
     /**
      * 复制 {@link org.springframework.boot.autoconfigure.cache.RedisCacheConfiguration}逻辑代码
      * 本人觉得这种写法比较冗余
+     *
      * @param cacheManagerCustomizers
      * @param redisCacheConfiguration
      * @param redisCacheManagerBuilderCustomizers
      * @param redisConnectionFactory
-     * @return
+     * @return RedisCacheManager
      */
     @Bean
     @ConditionalOnMissingBean(CacheManager.class)
