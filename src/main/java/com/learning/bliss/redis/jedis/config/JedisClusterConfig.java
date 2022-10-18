@@ -1,5 +1,7 @@
 package com.learning.bliss.redis.jedis.config;
 
+import jdk.nashorn.internal.runtime.logging.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -22,6 +24,7 @@ import redis.clients.jedis.JedisPoolConfig;
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(RedisProperties.class)
 @ConditionalOnProperty(name = "spring.redis.client-type", havingValue = "jedis", matchIfMissing = true)
+@Slf4j
 public class JedisClusterConfig {
 
 
@@ -33,6 +36,7 @@ public class JedisClusterConfig {
      */
     @Bean
     public RedisClusterConfiguration redisClusterConfiguration(RedisProperties redisProperties) {
+
         RedisProperties.Cluster cluster = redisProperties.getCluster();
         RedisClusterConfiguration config = new RedisClusterConfiguration(cluster.getNodes());
         config.setUsername(redisProperties.getUsername());

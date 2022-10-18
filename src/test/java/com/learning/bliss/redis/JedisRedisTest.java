@@ -32,7 +32,6 @@ public class JedisRedisTest {
     private RedisCacheDemo redisCacheDemo;
 
     @Test
-
     public void keysRedis(){
         stringRedisTemplate.opsForValue().set("zhangsan", "111");
         System.out.println(stringRedisTemplate.opsForValue().get("zhangsan"));
