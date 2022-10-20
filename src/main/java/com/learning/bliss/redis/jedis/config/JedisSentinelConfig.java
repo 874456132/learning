@@ -1,6 +1,8 @@
 package com.learning.bliss.redis.jedis.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -30,8 +32,9 @@ import java.util.List;
  */
 @Profile("sentinel")
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties(RedisProperties.class)
+@EnableConfigurationProperties({RedisProperties.class, CacheProperties.class})
 @ConditionalOnProperty(name = "spring.redis.client-type", havingValue = "jedis", matchIfMissing = true)
+@Slf4j
 public class JedisSentinelConfig {
 
 
@@ -43,7 +46,7 @@ public class JedisSentinelConfig {
      */
     @Bean
     protected RedisSentinelConfiguration redisSentinelConfiguration(RedisProperties redisProperties) {
-
+        log.info("Redis在sentinel模式下实例化org.springframework.data.redis.connection.RedisSentinelConfiguration对象");
         RedisProperties.Sentinel sentinelProperties = redisProperties.getSentinel();
         if (sentinelProperties != null) {
             RedisSentinelConfiguration config = new RedisSentinelConfiguration();
@@ -83,6 +86,7 @@ public class JedisSentinelConfig {
      */
     @Bean
     public JedisPoolConfig getJedisPoolConfig(RedisProperties redisProperties) {
+        log.info("Redis在sentinel模式下实例化redis.clients.jedis.JedisPoolConfig对象");
         RedisProperties.Pool pool = redisProperties.getJedis().getPool();
         JedisPoolConfig config = new JedisPoolConfig();
         //最大连接数
@@ -105,6 +109,7 @@ public class JedisSentinelConfig {
      */
     @Bean
     public JedisConnectionFactory jedisConnectionFactory(RedisSentinelConfiguration redisSentinelConfiguration, JedisPoolConfig jedisPoolConfig) {
+        log.info("Redis在sentinel模式下实例化org.springframework.data.redis.connection.jedis.JedisConnectionFactory对象");
         // 集群模式
         return new JedisConnectionFactory(redisSentinelConfiguration, jedisPoolConfig);
     }

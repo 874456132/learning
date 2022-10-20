@@ -3,10 +3,8 @@ package com.learning.bliss.redis.jedis;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.learning.bliss.redis.jedis.config.JedisStandaloneConfig;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.cache.CacheManagerCustomizers;
-import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -17,7 +15,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.cache.RedisCacheWriter;
@@ -39,10 +36,8 @@ import java.util.Objects;
  * spring redis节点配置查看 {@link RedisProperties}
  * SpringBoot自动配置机制查看{@link org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration}
  */
-@Profile("standalone")
+
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties(CacheProperties.class)
-@ConditionalOnClass(JedisStandaloneConfig.class)
 @ConditionalOnProperty(name = "spring.redis.client-type", havingValue = "jedis", matchIfMissing = true)
 public class RedisManager {
 
@@ -113,7 +108,7 @@ public class RedisManager {
      * Redis 缓存管理器
      */
     @Bean
-    @ConditionalOnSingleCandidate(CacheManager.class)
+    @ConditionalOnSingleCandidate(RedisCacheManager.class)
     public RedisCacheManager cacheManager(RedisCacheConfiguration redisCacheConfiguration, RedisConnectionFactory factory) {
         // 分别创建String和JSON格式序列化对象，对缓存数据key和value进行转换
         RedisCacheWriter redisCacheWriter = RedisCacheWriter.nonLockingRedisCacheWriter(Objects.requireNonNull(factory));

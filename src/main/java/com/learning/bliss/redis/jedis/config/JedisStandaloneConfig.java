@@ -1,5 +1,6 @@
 package com.learning.bliss.redis.jedis.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
@@ -26,8 +27,9 @@ import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
  */
 @Profile("standalone")
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties(RedisProperties.class)
+@EnableConfigurationProperties({RedisProperties.class,CacheProperties.class})
 @ConditionalOnProperty(name = "spring.redis.client-type", havingValue = "jedis", matchIfMissing = true)
+@Slf4j
 public class JedisStandaloneConfig {
 
     /**
@@ -39,6 +41,8 @@ public class JedisStandaloneConfig {
     @Bean
     @ConditionalOnSingleCandidate(RedisStandaloneConfiguration.class)
     public RedisStandaloneConfiguration redisStandaloneConfiguration(RedisProperties redisProperties) {
+        log.info("Redis在standalone模式下实例化org.springframework.data.redis.connection.RedisStandaloneConfiguration对象");
+        System.out.println("Redis在standalone模式下实例化org.springframework.data.redis.connection.RedisStandaloneConfiguration对象");
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
         config.setHostName(redisProperties.getHost());
         config.setPort(redisProperties.getPort());
@@ -57,6 +61,7 @@ public class JedisStandaloneConfig {
     @Bean
     @ConditionalOnSingleCandidate(RedisConnectionFactory.class)
     public JedisConnectionFactory jedisConnectionFactory(RedisStandaloneConfiguration redisStandaloneConfiguration) {
+        log.info("Redis在standalone模式下实例化org.springframework.data.redis.connection.jedis.JedisConnectionFactory对象");
         /*从JedisConnectionFactory的构造函数看
         public JedisConnectionFactory(RedisStandaloneConfiguration standaloneConfig) {
             this((RedisStandaloneConfiguration)standaloneConfig, (JedisClientConfiguration)(new JedisConnectionFactory.MutableJedisClientConfiguration()));
