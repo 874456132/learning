@@ -2,7 +2,6 @@ package com.learning.bliss.redis.jedis.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.cache.CacheProperties;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -23,7 +22,6 @@ import redis.clients.jedis.JedisPoolConfig;
 @Profile("cluster")
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({RedisProperties.class, CacheProperties.class})
-@ConditionalOnProperty(name = "spring.redis.client-type", havingValue = "jedis", matchIfMissing = true)
 @Slf4j
 public class JedisClusterConfig {
 
@@ -68,7 +66,6 @@ public class JedisClusterConfig {
 
         return config;
     }
-
 
 
     /**

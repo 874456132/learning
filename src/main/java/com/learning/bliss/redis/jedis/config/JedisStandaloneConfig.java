@@ -2,7 +2,6 @@ package com.learning.bliss.redis.jedis.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.cache.CacheProperties;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -25,10 +24,10 @@ import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
  * @Date: 2022/8/8 23:22
  * @Version 0.1
  */
+
 @Profile("standalone")
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties({RedisProperties.class,CacheProperties.class})
-@ConditionalOnProperty(name = "spring.redis.client-type", havingValue = "jedis", matchIfMissing = true)
+@EnableConfigurationProperties({RedisProperties.class, CacheProperties.class})
 @Slf4j
 public class JedisStandaloneConfig {
 
