@@ -2,14 +2,12 @@ package com.learning.bliss.redis.jedis.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.cache.CacheProperties;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 
@@ -38,7 +36,6 @@ public class JedisStandaloneConfig {
      * @return
      */
     @Bean
-    @ConditionalOnSingleCandidate(RedisStandaloneConfiguration.class)
     public RedisStandaloneConfiguration redisStandaloneConfiguration(RedisProperties redisProperties) {
         log.info("Redis在standalone模式下实例化org.springframework.data.redis.connection.RedisStandaloneConfiguration对象");
         System.out.println("Redis在standalone模式下实例化org.springframework.data.redis.connection.RedisStandaloneConfiguration对象");
@@ -58,7 +55,6 @@ public class JedisStandaloneConfig {
      * @return JedisConnectionFactory
      */
     @Bean
-    @ConditionalOnSingleCandidate(RedisConnectionFactory.class)
     public JedisConnectionFactory jedisConnectionFactory(RedisStandaloneConfiguration redisStandaloneConfiguration) {
         log.info("Redis在standalone模式下实例化org.springframework.data.redis.connection.jedis.JedisConnectionFactory对象");
         /*从JedisConnectionFactory的构造函数看
@@ -74,7 +70,6 @@ public class JedisStandaloneConfig {
     }
 
     @Bean
-    @ConditionalOnSingleCandidate(RedisCacheConfiguration.class)
     public RedisCacheConfiguration createConfiguration(CacheProperties cacheProperties) {
         CacheProperties.Redis redisProperties = cacheProperties.getRedis();
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig();

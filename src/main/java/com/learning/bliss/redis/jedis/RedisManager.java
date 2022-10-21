@@ -50,7 +50,6 @@ public class RedisManager {
      * @return RedisTemplate<String, Object>
      */
     @Bean
-    @ConditionalOnSingleCandidate(RedisTemplate.class)
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
         // 配置连接工厂
         redisTemplate.setConnectionFactory(factory);
@@ -88,7 +87,6 @@ public class RedisManager {
      * @return RedisTemplate<String, Object>
      */
     @Bean
-    @ConditionalOnSingleCandidate(StringRedisTemplate.class)
     public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
         stringRedisTemplate.setConnectionFactory(redisConnectionFactory);
 
@@ -104,8 +102,7 @@ public class RedisManager {
     /**
      * Redis 缓存管理器
      */
-    @Bean
-    @ConditionalOnSingleCandidate(RedisCacheManager.class)
+    /*@Bean
     public RedisCacheManager cacheManager(RedisCacheConfiguration redisCacheConfiguration, RedisConnectionFactory factory) {
         // 分别创建String和JSON格式序列化对象，对缓存数据key和value进行转换
         RedisCacheWriter redisCacheWriter = RedisCacheWriter.nonLockingRedisCacheWriter(Objects.requireNonNull(factory));
@@ -126,7 +123,7 @@ public class RedisManager {
     }
 
 
-    /**
+    *//**
      * 复制 {@link org.springframework.boot.autoconfigure.cache.RedisCacheConfiguration}逻辑代码
      * 本人觉得这种写法比较冗余
      *
@@ -135,7 +132,7 @@ public class RedisManager {
      * @param redisCacheManagerBuilderCustomizers
      * @param redisConnectionFactory
      * @return RedisCacheManager
-     */
+     *//*
     @Bean
     @ConditionalOnMissingBean(CacheManager.class)
     RedisCacheManager cacheManager(CacheManagerCustomizers cacheManagerCustomizers,
@@ -158,5 +155,5 @@ public class RedisManager {
 
         redisCacheManagerBuilderCustomizers.orderedStream().forEach((customizer) -> customizer.customize(builder));
         return cacheManagerCustomizers.customize(builder.build());
-    }
+    }*/
 }
