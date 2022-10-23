@@ -38,7 +38,6 @@ public class JedisStandaloneConfig {
     @Bean
     public RedisStandaloneConfiguration redisStandaloneConfiguration(RedisProperties redisProperties) {
         log.info("Redis在standalone模式下实例化org.springframework.data.redis.connection.RedisStandaloneConfiguration对象");
-        System.out.println("Redis在standalone模式下实例化org.springframework.data.redis.connection.RedisStandaloneConfiguration对象");
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
         config.setHostName(redisProperties.getHost());
         config.setPort(redisProperties.getPort());
@@ -71,6 +70,7 @@ public class JedisStandaloneConfig {
 
     @Bean
     public RedisCacheConfiguration createConfiguration(CacheProperties cacheProperties) {
+        log.info("Redis在standalone模式下实例化org.springframework.data.redis.cache.RedisCacheConfiguration对象");
         CacheProperties.Redis redisProperties = cacheProperties.getRedis();
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig();
 
