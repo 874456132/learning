@@ -3,8 +3,8 @@ package com.learning.bliss.redis.jedis;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.cache.CacheManagerCustomizers;
 import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -35,28 +35,24 @@ import java.util.Objects;
  * SpringBoot自动配置机制查看{@link org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration}
  */
 @ConditionalOnProperty(name = "spring.redis.client-type", havingValue = "jedis", matchIfMissing = true)
-@ConditionalOnBean({StringRedisTemplate.class, RedisTemplate.class, CacheManagerCustomizers.class})
 @Configuration(proxyBeanMethods = false)
+@Slf4j
 public class RedisManager {
-
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
-    @Autowired
-    private StringRedisTemplate stringRedisTemplate;
-
 
     /**
      * 设置RedisTemplate对象的序列化方式
-     *
+     * @param factory
      * @return RedisTemplate<String, Object>
      */
     @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
+    public RedisTemplate<Object, Object> redisTemplate(RedisConnectionFactory factory) {
+
+        log.info("设置RedisTemplate对象的序列化方式");
+        RedisTemplate<Object, Object> redisTemplate = new RedisTemplate<>();
         // 配置连接工厂
         redisTemplate.setConnectionFactory(factory);
         //使用Jackson2JsonRedisSerializer来序列化和反序列化redis的value值（默认使用JDK的序列化方式）
         Jackson2JsonRedisSerializer<Object> jacksonSeial = new Jackson2JsonRedisSerializer<>(Object.class);
-
 
         ObjectMapper om = new ObjectMapper();
         // 指定要序列化的域，field,get和set,以及修饰符范围，ANY是都有包括private和public
@@ -84,12 +80,15 @@ public class RedisManager {
 
     /**
      * 设置stringRedisTemplate对象的序列化方式
-     *
+     * @param factory
      * @return RedisTemplate<String, Object>
      */
     @Bean
-    public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
-        stringRedisTemplate.setConnectionFactory(redisConnectionFactory);
+    public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory factory) {
+
+        log.info("设置stringRedisTemplate对象的序列化方式");
+        StringRedisTemplate stringRedisTemplate = new StringRedisTemplate();
+        stringRedisTemplate.setConnectionFactory(factory);
 
         //使用StringRedisSerializer来序列化和反序列化redis的key值
         RedisSerializer<String> serializerStringKey = new StringRedisSerializer();
@@ -102,9 +101,14 @@ public class RedisManager {
 
     /**
      * 设置Redis缓存管理器RedisCacheManager对象的序列化方式
+     * @param redisCacheConfiguration
+     * @param factory
+     * @return
      */
     @Bean
     public RedisCacheManager cacheManager(RedisCacheConfiguration redisCacheConfiguration, RedisConnectionFactory factory) {
+
+        log.info("设置Redis缓存管理器RedisCacheManager对象的序列化方式");
         // 分别创建String和JSON格式序列化对象，对缓存数据key和value进行转换
         RedisCacheWriter redisCacheWriter = RedisCacheWriter.nonLockingRedisCacheWriter(Objects.requireNonNull(factory));
 
@@ -132,14 +136,14 @@ public class RedisManager {
      * @param cacheManagerCustomizers
      * @param redisCacheConfiguration
      * @param redisCacheManagerBuilderCustomizers
-     * @param redisConnectionFactory
+     * @param factory
      * @return RedisCacheManager
      */
     @Bean
     @ConditionalOnMissingBean(CacheManager.class)
     RedisCacheManager cacheManager(CacheManagerCustomizers cacheManagerCustomizers, RedisCacheConfiguration redisCacheConfiguration,
                                    ObjectProvider<RedisCacheManagerBuilderCustomizer> redisCacheManagerBuilderCustomizers,
-                                   RedisConnectionFactory redisConnectionFactory) {
+                                   RedisConnectionFactory factory) {
 
         Jackson2JsonRedisSerializer<Object> jacksonSeial = new Jackson2JsonRedisSerializer<>(Object.class);
         // 解决查询缓存转换异常的问题
@@ -151,7 +155,7 @@ public class RedisManager {
 
         redisCacheConfiguration = redisCacheConfiguration.serializeValuesWith(
                 RedisSerializationContext.SerializationPair.fromSerializer(jacksonSeial));
-        RedisCacheManager.RedisCacheManagerBuilder builder = RedisCacheManager.builder(redisConnectionFactory).cacheDefaults(
+        RedisCacheManager.RedisCacheManagerBuilder builder = RedisCacheManager.builder(factory).cacheDefaults(
                 redisCacheConfiguration);
 
         redisCacheManagerBuilderCustomizers.orderedStream().forEach((customizer) -> customizer.customize(builder));
