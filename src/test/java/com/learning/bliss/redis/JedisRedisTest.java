@@ -17,11 +17,9 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 /**
  * @Author xuexc
@@ -43,8 +41,19 @@ public class JedisRedisTest {
 
     @Test
     public void keysRedis(){
+        stringRedisTemplate.opsForValue().set("zhang", "111");
+        Assertions.assertEquals("111", stringRedisTemplate.opsForValue().get("zhang"));
+
+        //DEL key 该命令用于在 key 存在时删除 key。
+        Assertions.assertTrue(stringRedisTemplate.delete("zhang"));
+
+        //GETDEL key 该命令用于获取key的值并在 key 存在时删除 key。 目前报错，因为没有对应的 "GETDEL" 命令
+        /*stringRedisTemplate.opsForValue().set("wang", "111");
+        System.out.println(stringRedisTemplate.opsForValue().getAndDelete("wang"));*/
+
+        //DUMP key 序列化给定 key ，并返回被序列化的值。
         stringRedisTemplate.opsForValue().set("zhangsan", "111");
-        Assertions.assertEquals("111", stringRedisTemplate.opsForValue().get("zhangsan"));
+        System.out.println(stringRedisTemplate.dump("zhangsan"));
 
         //检查给定 key 是否存在，命令 EXISTS key
         Set set = new HashSet(1);
@@ -58,18 +67,16 @@ public class JedisRedisTest {
         Assertions.assertTrue(stringRedisTemplate.expire("zhangsan", Duration.ofSeconds(100)));
         System.out.println(stringRedisTemplate.getExpire("zhangsan"));
 
-        Assertions.assertTrue(stringRedisTemplate.expireAt("zhangsan", LocalDate.of(2022, 10, 29).atStartOfDay(ZoneId.systemDefault()).toInstant()));
+        //EXPIREAT key timestamp EXPIREAT 的作用和 EXPIRE 类似，都用于为 key 设置过期时间。 不同在于 EXPIREAT 命令接受的时间参数是 UNIX 时间戳(unix timestamp)。
+        Assertions.assertTrue(stringRedisTemplate.expireAt("zhangsan", LocalDate.now().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant()));
         System.out.println(stringRedisTemplate.getExpire("zhangsan"));
 
-        Date date;
-        try {
-            date = new SimpleDateFormat("yyyy-MM-dd").parse("2022-10-30");
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
-        }
-        Assertions.assertTrue(stringRedisTemplate.expireAt("zhangsan", date));
+        Assertions.assertTrue(stringRedisTemplate.expireAt("zhangsan", Date.from(LocalDate.now().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant())));
         System.out.println(stringRedisTemplate.getExpire("zhangsan"));
 
+        Set<String> keys = stringRedisTemplate.keys("*");
+        System.out.println(Arrays.toString(keys.toArray()));
+        //keys.stream().forEach(s -> System.out.println(s));
 
         /*System.out.println(stringRedisTemplate.opsForValue().getAndExpire("zhangsan", 10, TimeUnit.SECONDS));
         opsForValue().getAndExpire("zhangsan", Duration.ofSeconds(10));*/
