@@ -4,7 +4,6 @@ import com.learning.bliss.redis.jedis.RedisCacheDemo;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -12,14 +11,14 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.annotation.Resource;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
 /**
  * @Author xuexc
@@ -35,10 +34,12 @@ public class JedisRedisTest {
     private RedisTemplate<String, String> redisTemplate;
     @Resource
     private StringRedisTemplate stringRedisTemplate;
-
-    @Autowired
+    @Resource
     private RedisCacheDemo redisCacheDemo;
 
+    /**
+     * Redis keys 命令
+     */
     @Test
     public void keysRedis(){
         stringRedisTemplate.opsForValue().set("zhang", "111");
@@ -63,6 +64,7 @@ public class JedisRedisTest {
         //EXPIRE key seconds 为给定 key 设置过期时间
         Assertions.assertTrue(stringRedisTemplate.expire("zhangsan", 10, TimeUnit.SECONDS));
         System.out.println(stringRedisTemplate.getExpire("zhangsan"));
+        System.out.println(stringRedisTemplate.getExpire("zhangsan", TimeUnit.SECONDS));
 
         Assertions.assertTrue(stringRedisTemplate.expire("zhangsan", Duration.ofSeconds(100)));
         System.out.println(stringRedisTemplate.getExpire("zhangsan"));
@@ -78,9 +80,46 @@ public class JedisRedisTest {
         System.out.println(Arrays.toString(keys.toArray()));
         //keys.stream().forEach(s -> System.out.println(s));
 
+        //GETEX key 该命令用于获取key的值并在 key 存在时删除 key。 目前报错，因为没有对应的 "GETEX" 命令
         /*System.out.println(stringRedisTemplate.opsForValue().getAndExpire("zhangsan", 10, TimeUnit.SECONDS));
-        opsForValue().getAndExpire("zhangsan", Duration.ofSeconds(10));*/
+        stringRedisTemplate.opsForValue().getAndExpire("zhangsan", Duration.ofSeconds(10));*/
+
+        //PERSIST key 移除 key 的过期时间，key 将持久保持。
+        Assertions.assertTrue(stringRedisTemplate.persist("zhangsan"));
+        System.out.println(stringRedisTemplate.getExpire("zhangsan"));
+
+        //RANDOMKEY 从当前数据库中随机返回一个 key 。
+        System.out.println(stringRedisTemplate.randomKey());
+
+        //RENAME key newkey 修改 key 的名称
+        stringRedisTemplate.rename("zhangsan", "lisi");
+        Set set1 = new HashSet(1);
+        set1.add("lisi");
+        Assertions.assertEquals(1, stringRedisTemplate.countExistingKeys(set1).intValue());
+
+        //RENAMENX key newkey 仅当 newkey 不存在时，将 key 改名为 newkey 。
+        stringRedisTemplate.opsForValue().set("zhangsan", "111");
+        Assertions.assertTrue(stringRedisTemplate.renameIfAbsent("lisi", "zhangsan"));
+
     }
+
+    /**
+     * Strings 数据类型相关操作
+     */
+    @Test
+    public void stringRedis(){
+
+        //SET key value 设置指定 key 的值
+        stringRedisTemplate.opsForValue().set("刘邦", "汉高祖");
+
+        //GET key 获取指定 key 的值。
+        System.out.println(stringRedisTemplate.opsForValue().get("刘邦"));
+
+        //GETSET key value 将给定 key 的值设为 value ，并返回 key 的旧值(old value)。
+        System.out.println(stringRedisTemplate.opsForValue().getAndSet("刘邦", "泗水亭长"));
+        System.out.println(stringRedisTemplate.opsForValue().get("刘邦"));
+    }
+
     @Test
     public void redisCache(){
         RedisCacheDemo.User user = redisCacheDemo.queryUser("444");
