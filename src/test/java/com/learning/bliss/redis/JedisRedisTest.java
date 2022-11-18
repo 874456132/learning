@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 /**
  * @Author xuexc
@@ -44,6 +45,9 @@ public class JedisRedisTest {
     public void keysRedis(){
         stringRedisTemplate.opsForValue().set("zhang", "111");
         Assertions.assertEquals("111", stringRedisTemplate.opsForValue().get("zhang"));
+
+        //TYPE key 返回 key 所储存的值的类型。
+        System.out.println(stringRedisTemplate.type("zhang").toString());
 
         //DEL key 该命令用于在 key 存在时删除 key。
         Assertions.assertTrue(stringRedisTemplate.delete("zhang"));
@@ -96,11 +100,13 @@ public class JedisRedisTest {
         Set set1 = new HashSet(1);
         set1.add("lisi");
         Assertions.assertEquals(1, stringRedisTemplate.countExistingKeys(set1).intValue());
-
         //RENAMENX key newkey 仅当 newkey 不存在时，将 key 改名为 newkey 。
         stringRedisTemplate.opsForValue().set("zhangsan", "111");
         Assertions.assertTrue(stringRedisTemplate.renameIfAbsent("lisi", "zhangsan"));
 
+        //PERSIST key 移除 key 的过期时间，key 将持久保持。
+        Assertions.assertTrue(stringRedisTemplate.persist("zhangsan"));
+        System.out.println(stringRedisTemplate.getExpire("zhangsan"));
     }
 
     /**
@@ -118,6 +124,11 @@ public class JedisRedisTest {
         //GETSET key value 将给定 key 的值设为 value ，并返回 key 的旧值(old value)。
         System.out.println(stringRedisTemplate.opsForValue().getAndSet("刘邦", "泗水亭长"));
         System.out.println(stringRedisTemplate.opsForValue().get("刘邦"));
+
+        Pattern p = Pattern.compile("\\^[a-z][-a-z0-9]*\\$");
+        if(p.matcher("p-1").matches()) {
+            System.out.println("111111111");
+        }
     }
 
     @Test
