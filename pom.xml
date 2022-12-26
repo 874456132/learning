@@ -80,6 +80,12 @@
             <version>RELEASE</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <version>5.3.22</version>
+            <scope>compile</scope>
+        </dependency>
         <!-- test  end -->
     </dependencies>
 
