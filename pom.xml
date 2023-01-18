@@ -35,6 +35,19 @@
             <artifactId>jedis</artifactId>
             <scope>compile</scope>
         </dependency>
+        <!-- cache  start -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+        <!-- caffeine -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>2.6.0</version>
+        </dependency>
+        <!-- cache  end -->
+
 
 
         <!-- development tools  start -->
@@ -55,6 +68,18 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>31.1-jre</version>
+        </dependency>
+        <!--<dependency>
+            <groupId>org.roaringbitmap</groupId>
+            <artifactId>RoaringBitmap</artifactId>
+            <version>0.9.38</version>
+        </dependency>-->
+
         <!-- development tools  end -->
 
         <!-- test  start -->
@@ -68,7 +93,7 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
             <version>RELEASE</version>
@@ -85,7 +110,7 @@
             <artifactId>spring-test</artifactId>
             <version>5.3.22</version>
             <scope>compile</scope>
-        </dependency>
+        </dependency>-->
         <!-- test  end -->
     </dependencies>
 

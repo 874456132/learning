@@ -1,22 +1,27 @@
 package com.learning.bliss.redis;
 
-import com.learning.bliss.redis.jedis.RedisCacheDemo;
+import com.alibaba.fastjson.JSONObject;
+import com.learning.bliss.demo.cache.RedisCacheDemo;
+import com.learning.bliss.utils.RedisUtil;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Range;
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Point;
+import org.springframework.data.redis.connection.RedisGeoCommands;
 import org.springframework.data.redis.connection.RedisZSetCommands;
-import org.springframework.data.redis.connection.stream.Consumer;
-import org.springframework.data.redis.connection.stream.RecordId;
-import org.springframework.data.redis.connection.stream.StreamInfo;
+import org.springframework.data.redis.connection.stream.*;
 import org.springframework.data.redis.core.*;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import javax.annotation.Resource;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -30,11 +35,11 @@ import java.util.concurrent.TimeUnit;
 @ActiveProfiles("standalone")
 public class JedisRedisTest {
 
-    @Resource
+    @Autowired
     private RedisTemplate<String, String> redisTemplate;
-    @Resource
+    @Autowired
     private StringRedisTemplate stringRedisTemplate;
-    @Resource
+    @Autowired
     private RedisCacheDemo redisCacheDemo;
 
     /**
@@ -500,43 +505,253 @@ public class JedisRedisTest {
     }
 
     /**
-     * Streems 数据类型相关操作
+     * Streams 数据类型相关操作
      */
     @Test
-    public void streemsRedis() throws InterruptedException {
+    public void streamsRedis() {
+        /**
+         * STREAM独立消费类型特点：
+         *      消息可回溯，读取不会删除
+         *      一个消息可以被多个消费者读取
+         *      可以阻塞读取
+         *      有消息漏读的风险：
+         *          当我们指定起始ID为$时，代表读取最新的消息，如果我们处理一条消息的过程中，
+         *          又有超过1条以上的消息到达队列，则下次获取时也只能获取到最新的一条，会出现漏读消息的问题
+         */
+        System.out.println("-----------STREAM独立消费类型-------------");
+        //清数据
+        redisTemplate.delete(redisTemplate.keys("*"));
 
-        //XADD 添加消息到末尾
-        HashMap<String, String> pram = new HashMap<>();
-        pram.put("name", "init");
-
-        RecordId recordId = redisTemplate.opsForStream().add("integral-queue", pram);
-        //创建消费者组 XGROUP CREATE key groupName ID [MKSTREAM]
-        Assertions.assertTrue(redisTemplate.opsForStream().destroyGroup("myQueue", "myGroup"));
-        Assertions.assertTrue(redisTemplate.opsForStream().destroyGroup("myQueue", "myGroup1"));
-        System.out.println(redisTemplate.opsForStream().createGroup("myQueue", "myGroup"));
-        System.out.println(redisTemplate.opsForStream().createGroup("myQueue", "myGroup1"));
-        //消费组信息
-        StreamInfo.XInfoConsumers xInfoConsumers = redisTemplate.opsForStream().consumers("myQueue", "myGroup");
-        System.out.println(xInfoConsumers.toString());
-        //删除指定的消费者组：XGROUP DESTROY mystream some-consumer-group
-        Assertions.assertTrue(redisTemplate.opsForStream().destroyGroup("myQueue", "myGroup1"));
-        //删除消费者组中的指定消费者：XGROUP DELCONSUMER mystream consumer-group-name myconsumer123
-        Consumer consumer = Consumer.from("myGroup1", "zhangsan");
-        Assertions.assertTrue(redisTemplate.opsForStream().deleteConsumer("myQueue", consumer));
-
-
-        Map map = new HashMap();
+        //XADD key ID field string [field string ...]  添加key主题的消息到末尾
+        Map<String, String> map = new HashMap<>();
         map.put("琴", "琴瑟");
         map.put("棋", "围棋");
         map.put("书", "书法");
         map.put("画", "绘画");
         //XADD key ID field string [field string ...]将指定的流条目追加到指定key的流中
-        System.out.println(redisTemplate.opsForStream().add("雅人四好", map));
+        MapRecord<String, String, String> mapRecord = StreamRecords.mapBacked(map).withStreamKey("my-queue");
+        RecordId recordId = redisTemplate.opsForStream().add(mapRecord);
+        System.out.println(recordId.toString());
+        System.out.println(redisTemplate.opsForStream().add("my-queue", map).toString());
 
-        //redisTemplate.opsForStream().info("雅人四好").;
+        //XREAD [COUNT count] [BLOCK milliseconds] STREAMS key [key ...] ID [ID ...] 从一个或多个stream中读取数据，仅返回ID大于调用者报告的最后接收ID的条目。
+        //BLOCK项用于指定阻塞时长。STREAMS项必须在最后，用于指定stream和ID。
+        List<MapRecord<String, Object, Object>> recordList = redisTemplate.opsForStream().read( Consumer.from("myGroup", "myConsumer"), //独立消费无消费组
+                StreamReadOptions.empty().count(10).block(Duration.of(5000, ChronoUnit.SECONDS)), StreamOffset.fromStart("my-queue"));
+        recordList.stream().forEach(record -> {
+            System.out.println("redisTemplate.opsForStream().read：-------StreamReadOptions.empty().count(1).block(Duration.of(5000, ChronoUnit.SECONDS))------");
+            System.out.println("id=" + record.getId());
+            System.out.println("stream=" + record.getStream());
+            System.out.println("value=" + JSONObject.toJSONString(record.getValue()));
+        });
 
+        List<MapRecord<String, Object, Object>> recordList1 = redisTemplate.opsForStream().read( Consumer.from("myGroup", "myConsumer"), //独立消费无消费组
+                StreamReadOptions.empty(), StreamOffset.fromStart("my-queue"));
+        recordList1.stream().forEach(record -> {
+            System.out.println("redisTemplate.opsForStream().read：-------StreamReadOptions.empty()------");
+            System.out.println("id=" + record.getId());
+            System.out.println("stream=" + record.getStream());
+            System.out.println("value=" + JSONObject.toJSONString(record.getValue()));
+        });
+
+        //XDEL key ID [ID ...]删除stream中的entry并返回删除的数量。
+        System.out.println("redisTemplate.opsForStream().delete：" + redisTemplate.opsForStream().delete("my-queue", recordId));
+
+        // XLEN key返回stream中的entry数量。如果key不存在，则返回0。对于长度为0的stream，Redis不会删除，因为可能存在关联的消费者组。
+        System.out.println("redisTemplate.opsForStream().size：" + redisTemplate.opsForStream().size("my-queue"));
+
+        //XRANGE key start end [COUNT count]：该命令用于返回stream中指定ID范围的数据，可以使用-和+表示最小和最大ID。ID也可以指定为不完全ID，即只指定Unix时间戳，就可以获取指定时间范围内的数据。
+        //读取队列的前10条记录，从ID=0的记录开始，一直到ID最大值
+        System.out.println("redisTemplate.opsForStream().range：" + redisTemplate.opsForStream().range("my-queue", Range.closed("0", "+"), RedisZSetCommands.Limit.limit().count(2)));
+        /**
+         * STREAM消费组类型特点：
+         *         消息可回溯
+         *         可以多消费者争抢消息，加快消费速度
+         *         可以阻塞读取
+         *         没有消息漏读的风险
+         *         有消息确认机制，保证消息至少被消费一次
+         */
+        System.out.println("-----------STREAM消费组类型-------------");
+        //清数据
+        redisTemplate.delete(redisTemplate.keys("*"));
+        //创建消费者组 XGROUP CREATE key groupName ID [MKSTREAM]
+        System.out.println("redisTemplate.opsForStream().createGroup：" + redisTemplate.opsForStream().createGroup("myStream", "myGroup"));
+        System.out.println("redisTemplate.opsForStream().createGroup：" + redisTemplate.opsForStream().createGroup("myStream", "myGroup1"));
+        // 在消费组 myGroup 中创建一个名为 myConsumer 的消费者
+        // 消费者将从名为 myStream 的 Stream 中消费消息
+        Map<String, String> map1 = new HashMap<>();
+        map1.put("琴", "琴瑟");
+        map1.put("棋", "围棋");
+        map1.put("书", "书法");
+        map1.put("画", "绘画");
+        //XADD key ID field string [field string ...]将指定的流条目追加到指定key的流中
+        MapRecord<String, String, String> mapRecord1 = StreamRecords.mapBacked(map1).withStreamKey("myStream");
+        System.out.println("------redisTemplate.opsForStream().add------" + redisTemplate.opsForStream().add(mapRecord1).toString());
+        System.out.println("------redisTemplate.opsForStream().add------" + redisTemplate.opsForStream().add("myStream", map1).toString());
+
+        StreamInfo.XInfoStream xInfoStream = redisTemplate.opsForStream().info("myStream");
+        System.out.println("------redisTemplate.opsForStream().info---StreamInfo.XInfoStream.getFirstEntry() ---" + xInfoStream.getFirstEntry());
+        long streamSize = xInfoStream.streamLength();
+        System.out.println("------redisTemplate.opsForStream().info---StreamInfo.XInfoStream.streamLength() ---" + streamSize);
+
+        System.out.println("--------redisTemplate.opsForStream().read：XREADGROUP -------");
+        while (streamSize > 0) {
+            List<MapRecord<String, Object, Object>> messages = redisTemplate.opsForStream().read(
+                    Consumer.from("myGroup", "myConsumer"),
+                    StreamReadOptions.empty(),
+                    StreamOffset.create("myStream", ReadOffset.lastConsumed()/**读取 ID 大于使用者组使用的最后一个元素的所有新到达元素**/));
+            for(MapRecord<String, Object, Object> message : messages) {
+                System.out.println("id=" + message.getId());
+                System.out.println("stream=" + message.getStream());
+                System.out.println("value=" + JSONObject.toJSONString(message.getValue()));
+            }
+
+            System.out.println("--------redisTemplate.opsForStream().read：XREADGROUP 2-------");
+            List<MapRecord<String, Object, Object>> messages1 = redisTemplate.opsForStream().read(
+                    Consumer.from("myGroup", "myConsumer1"),
+                    StreamReadOptions.empty().count(10).noack(),
+                    StreamOffset.create("myStream", ReadOffset.lastConsumed()));
+            for(MapRecord<String, Object, Object> message1 : messages1) {
+                System.out.println("id=" + message1.getId());
+                System.out.println("stream=" + message1.getStream());
+                System.out.println("value=" + JSONObject.toJSONString(message1.getValue()));
+            }
+            streamSize--;
+        }
+
+        //消费组信息
+        StreamInfo.XInfoConsumers xInfoConsumers = redisTemplate.opsForStream().consumers("myStream", "myGroup");
+        System.out.println("------------redisTemplate.opsForStream().consumers------------");
+        Iterator<StreamInfo.XInfoConsumer> iterator = xInfoConsumers.iterator();
+        while (iterator.hasNext()) {
+            System.out.println(iterator.next().toString());
+        }
+
+        //显示待处理消息的相关信息
+        System.out.println("-------------redisTemplate.opsForStream().pending------------xpending显示待处理消息的相关信息--");
+        PendingMessages pendingMessages = redisTemplate.opsForStream().pending("myStream", "myGroup", Range.closed("0", "+"), 10);
+        Iterator<PendingMessage> itr = pendingMessages.iterator();
+        while (itr.hasNext()) {
+            System.out.println(itr.next().toString());
+        }
+        PendingMessages pendingMessages1 = redisTemplate.opsForStream().pending("myStream", "myGroup1", Range.closed("0", "+"), 10);
+        Iterator<PendingMessage> itr1 = pendingMessages1.iterator();
+        while (itr1.hasNext()) {
+            System.out.println(itr1.next().toString());
+        }
+        System.out.println("--------redisTemplate.opsForStream().acknowledge------XACK----" +
+                redisTemplate.opsForStream().acknowledge("myStream", "myGroup", pendingMessages.get(0).getId()));
+        PendingMessages pendingMessages2 = redisTemplate.opsForStream().pending("myStream", "myGroup", Range.closed("0", "+"), 10);
+        Iterator<PendingMessage> itr2 = pendingMessages2.iterator();
+        RecordId recordIdXclaim = null;
+        while (itr2.hasNext()) {
+            recordIdXclaim = itr2.next().getId();
+            System.out.println(recordIdXclaim);
+        }
+        StreamInfo.XInfoConsumers xInfoConsumers1 = redisTemplate.opsForStream().consumers("myStream", "myGroup");
+        System.out.println("------------redisTemplate.opsForStream().consumers------------");
+        Iterator<StreamInfo.XInfoConsumer> iteratorConsumers = xInfoConsumers1.iterator();
+        while (iteratorConsumers.hasNext()) {
+            System.out.println(iteratorConsumers.next().toString());
+        }
+
+        //XCLAIM 这个命令用于改变pending消息的所有权，新的owner是命令参数中的consumer。
+        //最终调用的是XCLAIM
+        System.out.println("----------------XCLAIM---------------");
+        RecordId finalRecordIdXclaim = recordIdXclaim;
+        List<ByteRecord> retVal = this.redisTemplate.execute((RedisCallback<List<ByteRecord>>) connection -> { // XCLAIM 指令的实现方法
+            return connection.streamCommands().xClaim("myStream".getBytes(), "myGroup", "myConsumer1", Duration.ofSeconds(10), finalRecordIdXclaim);
+        });
+        for (ByteRecord byteRecord : retVal) {
+            System.out.println("id=" + byteRecord.getId());
+            System.out.println("stream=" + byteRecord.getStream());
+            System.out.println("value=" + JSONObject.toJSONString(byteRecord.getValue()));
+        }
+
+        System.out.println("------------redisTemplate.opsForStream().consumers------------");
+        StreamInfo.XInfoConsumers xInfoConsumers2 = redisTemplate.opsForStream().consumers("myStream", "myGroup");
+        Iterator<StreamInfo.XInfoConsumer> iteratorConsumers2 = xInfoConsumers2.iterator();
+        while (iteratorConsumers2.hasNext()) {
+            System.out.println(iteratorConsumers2.next().toString());
+        }
+
+        //删除消费者组中的指定消费者：XGROUP DELCONSUMER mystream consumer-group-name myconsumer123
+        Consumer consumer = Consumer.from("myGroup", "myConsumer");
+        Assertions.assertTrue(redisTemplate.opsForStream().deleteConsumer("myStream", consumer));
+
+        //删除指定的消费者组：XGROUP DESTROY mystream some-consumer-group
+        Assertions.assertTrue(redisTemplate.opsForStream().destroyGroup("myStream", "myGroup"));
+    }
+
+    /**
+     * HyperLogLog 数据类型相关操作
+     */
+    @Test
+    public void hyperLogLogRedis() {
+
+        /**
+         * 1：HyperLogLog是一种算法，并非redis独有
+         * 2：目的是做基数统计，故不是集合，不会保存元数据，只记录数量而不是数值。
+         * 3：耗空间极小，支持输入非常体积的数据量
+         * 4：核心是基数估算算法，主要表现为计算时内存的使用和数据合并的处理。最终数值存在一定误差
+         * 5：redis中每个hyperloglog key占用了12K的内存用于标记基数
+         * 6：pfadd命令并不会一次性分配12k内存，而是随着基数的增加而逐渐增加内存分配；而pfmerge操作则会将sourcekey合并后存储在12k大小的key中，
+         *   这由hyperloglog合并操作的原理（两个hyperloglog合并时需要单独比较每个桶的值）可以很容易理解。
+         * 7：误差说明：基数估计的结果是一个带有 0.81% 标准错误（standard error）的近似值。是可接受的范围
+         * 8：Redis 对 HyperLogLog 的存储进行了优化，在计数比较小时，它的存储空间采用稀疏矩阵存储，空间占用很小，仅仅在计数慢慢变大，
+         *   稀疏矩阵占用空间渐渐超过了阈值时才会一次性转变成稠密矩阵，才会占用 12k 的空间
+         * 9：HyperLogLog算法一开始就是为了大数据量的统计而发明的，所以很适合那种数据量很大，然后又没要求不能有一点误差的计算，
+         *   HyperLogLog 提供不精确的去重计数方案，虽然不精确但是也不是非常不精确，标准误差是 0.81%，不过这对于页面用户访问量是没影响的，
+         *   因为这种统计可能是访问量非常巨大，但是又没必要做到绝对准确，访问量对准确率要求没那么高，但是性能存储方面要求就比较高了，
+         *   而HyperLogLog正好符合这种要求，不会占用太多存储空间，同时性能不错
+         */
+        // Pfadd 命令 添加指定元素到 HyperLogLog 中。
+        for (int i = 0; i < 1000; i++) {
+            redisTemplate.opsForHyperLogLog().add("pv1", String.valueOf(i));
+        }
+
+        // Pfcount 命令 返回给定 HyperLogLog 的基数估算值。
+        System.out.println("Redis HyperLogLog command for Pfcount ：" + redisTemplate.opsForHyperLogLog().size("pv1"));
+    }
+
+    @Test
+    public void geoRedis() {
+        Point point = new Point(116.41338, 39.91092);
+        redisTemplate.opsForGeo().add("geo", point, "北京");
+        Point point1 = new Point(108.94647, 34.34727);
+        redisTemplate.opsForGeo().add("geo", point1, "西安");
+
+
+        Distance d = redisTemplate.opsForGeo().distance("geo", "北京", "西安", RedisGeoCommands.DistanceUnit.KILOMETERS);
+        System.out.println("Redis Geo command for GEODIST ： " + d);
+        System.out.println("Redis Geo command for GEODIST ： " + d.getValue());
+    }
+
+    @Test
+    public void bitmapsRedis() {
+
+        /**
+         * SETBIT ：把bit array的第bit位设置为value的值，value只能是0或者1。
+         * GETBIT ：返回bit array的第bit位的二进制值。
+         * BITCOUNT ：返回bit array中1的个数。
+         * BITOP ：OP操作有AND(与)、OR(或)、XOR(异或)、NOT(非)，该命令表示将array1和array2进行位操作，并把结构存入result中。
+         */
+        //set 记录8900001客户浏览了哪些网站
+        RedisUtil.Bitmaps.BitMapKey bitMapKey = RedisUtil.Bitmaps.BitMapKey.computeUserGroup(8900001);
+        System.out.println(bitMapKey);
+
+        String redisKey = bitMapKey.generateKeyWithPrefix("Browse");
+        System.out.println("BitMap key ：" + redisKey);
+        RedisUtil.Bitmaps.setBit(redisKey, "www.baidu.com", true);
+        RedisUtil.Bitmaps.setBit(redisKey, "www.google.com", true);
+
+        System.out.println("BITCOUNT ：返回bit array中1的个数 ：" + RedisUtil.Bitmaps.bitCount(redisKey));
+
+        System.out.println("GETBIT ：返回bit array的第bit位的二进制值" + RedisUtil.Bitmaps.getBit(redisKey, "www.google.com"));
+        System.out.println("BITCOUNT ：返回bit array中1的个数 ：" + RedisUtil.Bitmaps.bitCount(redisKey));
 
     }
+
 
     @Test
     public void redisCache() {
