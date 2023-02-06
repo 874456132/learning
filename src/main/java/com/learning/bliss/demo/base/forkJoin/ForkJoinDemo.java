@@ -36,12 +36,18 @@ public class ForkJoinDemo {
             this.to = to;
         }
         protected Integer compute() {
-            if (from == to) {
-                return numbers[from-1];
+            if (to - from <=  10) {
+                int sum = 0;
+                while (to - from >= 0) {
+                    sum = sum + numbers[from-1];
+                    from ++;
+                }
+                return sum;
             } else {
                 int middle = (from + to) >>> 1;
                 SumTask taskLeft = new SumTask(numbers, from, middle);
-                taskLeft.fork();
+                taskLeft.fork();//回调compute()方法，再次拆分
+                
                 SumTask taskRight = new SumTask(numbers, middle + 1, to);
                 taskRight.fork();
                 return taskLeft.join() + taskRight.join();

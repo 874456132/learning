@@ -69,6 +69,8 @@
             <artifactId>commons-lang3</artifactId>
         </dependency>
 
+        <!--Google Guava是Google的java项目广泛依赖的核心库,其功能强大并且高效稳定,我们日常企业开发或学习也可以参考和借鉴Guava.
+        其对集合Collection、缓存Cache、原生数据类型支持、并发库、通用注解、字符串处理和IO工具,都提供了高效的支持.-->
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>

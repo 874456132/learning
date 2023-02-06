@@ -1,11 +1,9 @@
 package com.learning.bliss.config.redis;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisPassword;
@@ -21,7 +19,7 @@ import redis.clients.jedis.JedisPoolConfig;
  * SpringBoot自动配置机制查看{@link org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration}
  */
 @Profile("cluster")
-@EnableConfigurationProperties({RedisProperties.class, CacheProperties.class})
+@EnableConfigurationProperties(RedisProperties.class)
 @Component
 @Slf4j
 public class JedisClusterConfig {
@@ -55,6 +53,7 @@ public class JedisClusterConfig {
      */
     @Bean
     public JedisPoolConfig getJedisPoolConfig(RedisProperties redisProperties) {
+
         log.info("Redis在cluster模式下实例化redis.clients.jedis.JedisPoolConfig对象");
         RedisProperties.Pool pool = redisProperties.getJedis().getPool();
         JedisPoolConfig config = new JedisPoolConfig();
@@ -78,7 +77,7 @@ public class JedisClusterConfig {
      */
     @Bean
     public JedisConnectionFactory jedisConnectionFactory(RedisClusterConfiguration redisClusterConfiguration, JedisPoolConfig jedisPoolConfig) {
-        log.info("Redis在cluster模式下实例化org.springframework.data.redis.connection.jedis.JedisConnectionFactory对象");
+        log.info("Redis在cluster模式下实例化org.springframework.data.redis.connection.jedis.JedisConnectionFactory对象" + redisClusterConfiguration.getClass().toString());
         // 集群模式
         //默认指定8个核心线程数的队列
         //JedisConnectionFactory factory = new JedisConnectionFactory(redisClusterConfiguration);

@@ -45,7 +45,7 @@ public class RedisZsetConsumerConfig implements InitializingBean {
 
     private AtomicBoolean isClose = new AtomicBoolean(false);
 
-    private ExecutorService executorService = ThreadPoolExecutorFactory.threadPoolExecutor3;
+    //private ExecutorService executorService = (ExecutorService) ThreadPoolExecutorFactory.taskRedisQueueExecutor();
 
     @SneakyThrows
     @Override
@@ -109,7 +109,7 @@ public class RedisZsetConsumerConfig implements InitializingBean {
     @PreDestroy
     public void preDestory() {
         isClose.set(true);
-        executorService.shutdown();
+        //executorService.shutdown();
     }
 
 }

@@ -3,6 +3,7 @@ package com.learning.bliss.utils;
 import com.google.common.hash.Funnels;
 import com.google.common.hash.Hashing;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.*;
 import org.springframework.data.redis.connection.RedisGeoCommands;
@@ -17,8 +18,11 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Redis封装操作工具类
@@ -28,6 +32,7 @@ import java.util.Map;
  * @Version 1.0
  */
 @Component
+@Slf4j
 public class RedisUtil {
 
     private static StringRedisTemplate stringRedisTemplate;
@@ -53,6 +58,117 @@ public class RedisUtil {
         this.redisTemplate =  SpringUtils.getBean("redisTemplate", RedisTemplate.class);
     }*/
 
+    /**
+     * redis String数据类型
+     */
+    public static class Strings {
+
+        /**
+         * 读取缓存
+         *
+         * @param key Redis键名
+         * @return 是否存在
+         */
+        public static String get(final String key) {
+            return stringRedisTemplate.opsForValue().get(key);
+        }
+
+        /**
+         * 写入缓存
+         *
+         * @param key   redis键
+         * @param value redis值
+         * @return 是否成功
+         */
+        public static boolean set(final String key, String value) {
+            boolean result = false;
+            try {
+                //将key插入Bloom过滤器，以解决缓存击穿问题
+
+                stringRedisTemplate.opsForValue().set(key, value);
+                result = true;
+            } catch (Exception e) {
+                log.error("redis set value is error, key: " + key + "value: " + value, e);
+            }
+            return result;
+        }
+
+        /**
+         * 写入缓存设置时效时间
+         *
+         * @param key   redis键
+         * @param value redis值
+         * @return 是否成功
+         */
+        public static boolean set(final String key, String value, Long expireTime) {
+            boolean result = false;
+            try {
+                stringRedisTemplate.opsForValue().set(key, value, expireTime, TimeUnit.SECONDS);
+                result = true;
+            } catch (Exception e) {
+                log.error("redis set value is error, key: " + key + "value: " + value + "expireTime: " + expireTime, e);
+            }
+            return result;
+        }
+
+        /**
+         * 批量删除对应的键值对
+         *
+         * @param keys Redis键名数组
+         */
+        public static void removeByKeys(final String... keys) {
+            for (String key : keys) {
+                remove(key);
+            }
+        }
+
+        /**
+         * 批量删除Redis key
+         *
+         * @param pattern 键名包含字符串（如：myKey*）
+         */
+        public static void removePattern(final String pattern) {
+            Set<String> keys = redisTemplate.keys(pattern);
+            if (keys != null && keys.size() > 0) {
+                try {
+                    redisTemplate.delete(keys);
+                } catch (Exception e) {
+                    throw new RuntimeException("redis delete keys is error, keys: " + Arrays.toString(keys.toArray()), e);
+                }
+            }
+        }
+
+        /**
+         * 删除key,也删除对应的value
+         *
+         * @param key Redis键名
+         */
+        private static void remove(final String key) {
+            if (exists(key)) {
+                try {
+                    stringRedisTemplate.delete(key);
+                } catch (Exception e) {
+                    throw new RuntimeException("redis delete key is error, key: " + key, e);
+                }
+            }
+        }
+
+        /**
+         * 判断缓存中是否有对应的value
+         *
+         * @param key Redis键名
+         * @return 是否存在
+         */
+        public static Boolean exists(final String key) {
+            boolean result = Boolean.FALSE;
+            try {
+                result = redisTemplate.hasKey(key);
+            } catch (Exception e) {
+                log.error("redis hasKey key is error, key: " + key, e);
+            }
+            return result;
+        }
+    }
     /**
      * redis Stream数据类型，主要用来实现消息队列
      */

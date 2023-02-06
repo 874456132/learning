@@ -1,6 +1,8 @@
 package com.learning.bliss.config.cache;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.hash.BloomFilter;
+import com.google.common.hash.Funnels;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.cache.CacheManagerCustomizers;
@@ -16,6 +18,7 @@ import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.cache.RedisCacheWriter;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
@@ -88,4 +91,15 @@ public class CacheManager {
         redisCacheManagerBuilderCustomizers.orderedStream().forEach((customizer) -> customizer.customize(builder));
         return cacheManagerCustomizers.customize(builder.build());
     }
+
+    //初始化布隆过滤器，放入到spring容器里面
+    @Bean
+    public BloomFilter<String> bloomFilter() {
+        BloomFilter<String> filter = BloomFilter.create(
+                Funnels.stringFunnel(Charset.defaultCharset()),
+                1000,//初始容量
+                0.01);//误差率
+        return filter;
+    }
+
 }

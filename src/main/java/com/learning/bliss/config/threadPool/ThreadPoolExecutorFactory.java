@@ -107,7 +107,7 @@ public class ThreadPoolExecutorFactory {
             ForkJoinPool.defaultForkJoinWorkerThreadFactory, new CustomStreamErrorHandle(), true);
 
     @Bean("taskRedisQueueExecutor")
-    public TaskExecutor taskRedisQueueExecutor() {
+    public static TaskExecutor taskRedisQueueExecutor() {
         ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
         taskExecutor.setCorePoolSize(5);
         taskExecutor.setMaxPoolSize(10);

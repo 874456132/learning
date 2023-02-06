@@ -1,18 +1,14 @@
 package com.learning.bliss.config.redis;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.cache.CacheProperties;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
-import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.stereotype.Component;
 
@@ -29,7 +25,7 @@ import org.springframework.stereotype.Component;
  */
 
 @Profile("standalone")
-@EnableConfigurationProperties({RedisProperties.class, CacheProperties.class})
+@EnableConfigurationProperties(RedisProperties.class)
 @Component
 @Slf4j
 public class JedisStandaloneConfig {
@@ -58,6 +54,8 @@ public class JedisStandaloneConfig {
      * @param redisStandaloneConfiguration
      * @return JedisConnectionFactory
      */
+
+    @ConditionalOnProperty(name = "spring.redis.client-type", havingValue = "jedis", matchIfMissing = true)
     @Bean
     public JedisConnectionFactory jedisConnectionFactory(RedisStandaloneConfiguration redisStandaloneConfiguration) {
         log.info("Redis在standalone模式下实例化org.springframework.data.redis.connection.jedis.JedisConnectionFactory对象");
@@ -73,31 +71,24 @@ public class JedisStandaloneConfig {
         return factory;
     }
 
+    /**
+     * 构建jedis连接工厂（对象）
+     *
+     * @param redisStandaloneConfiguration
+     * @return JedisConnectionFactory
+     */
+    @ConditionalOnProperty(name = "spring.redis.client-type", havingValue = "lettuce", matchIfMissing = true)
+    @Bean
+    public LettuceConnectionFactory lettuceConnectionFactory(RedisStandaloneConfiguration redisStandaloneConfiguration) {
+        log.info("Redis在standalone模式下实例化org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory对象");
+        LettuceConnectionFactory lettuceConnectionFactory = new LettuceConnectionFactory(redisStandaloneConfiguration);
+        return lettuceConnectionFactory;
+    }
+
     @Bean
     public ReactiveRedisConnectionFactory reactiveRedisConnectionFactory(RedisStandaloneConfiguration redisStandaloneConfiguration) {
 
         ReactiveRedisConnectionFactory factory = new LettuceConnectionFactory(redisStandaloneConfiguration);
         return factory;
-    }
-
-    @Bean
-    public RedisCacheConfiguration createConfiguration(CacheProperties cacheProperties) {
-        log.info("Redis在standalone模式下实例化org.springframework.data.redis.cache.RedisCacheConfiguration对象");
-        CacheProperties.Redis redisProperties = cacheProperties.getRedis();
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig();
-
-        if (redisProperties.getTimeToLive() != null) {
-            config = config.entryTtl(redisProperties.getTimeToLive());
-        }
-        if (redisProperties.getKeyPrefix() != null) {
-            config = config.prefixCacheNameWith(redisProperties.getKeyPrefix());
-        }
-        if (!redisProperties.isCacheNullValues()) {
-            config = config.disableCachingNullValues();
-        }
-        if (!redisProperties.isUseKeyPrefix()) {
-            config = config.disableKeyPrefix();
-        }
-        return config;
     }
 }

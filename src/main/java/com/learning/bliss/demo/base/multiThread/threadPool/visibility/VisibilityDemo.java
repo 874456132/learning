@@ -1,4 +1,4 @@
-package com.learning.bliss.demo.base.multiThread.visibility;
+package com.learning.bliss.demo.base.multiThread.threadPool.visibility;
 
 /**
  * 线程安全之可见性

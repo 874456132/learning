@@ -1,7 +1,6 @@
 package com.learning.bliss.redis;
 
 import com.alibaba.fastjson.JSONObject;
-import com.learning.bliss.demo.cache.RedisCacheDemo;
 import com.learning.bliss.utils.RedisUtil;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -32,15 +31,13 @@ import java.util.concurrent.TimeUnit;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest
-@ActiveProfiles("standalone")
-public class JedisRedisTest {
+//@ActiveProfiles("standalone")
+public class RedisCommandTest {
 
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
-    @Autowired
-    private RedisCacheDemo redisCacheDemo;
 
     /**
      * Redis keys 命令
@@ -714,6 +711,9 @@ public class JedisRedisTest {
         System.out.println("Redis HyperLogLog command for Pfcount ：" + redisTemplate.opsForHyperLogLog().size("pv1"));
     }
 
+    /**
+     * geo 数据类型相关操作
+     */
     @Test
     public void geoRedis() {
         Point point = new Point(116.41338, 39.91092);
@@ -727,6 +727,9 @@ public class JedisRedisTest {
         System.out.println("Redis Geo command for GEODIST ： " + d.getValue());
     }
 
+    /**
+     * bitmaps 数据类型相关操作
+     */
     @Test
     public void bitmapsRedis() {
 
@@ -751,15 +754,5 @@ public class JedisRedisTest {
         System.out.println("BITCOUNT ：返回bit array中1的个数 ：" + RedisUtil.Bitmaps.bitCount(redisKey));
 
     }
-
-
-    @Test
-    public void redisCache() {
-        RedisCacheDemo.User user = redisCacheDemo.queryUser("444");
-        System.out.println(user.toString());
-
-
-    }
-
 }
 

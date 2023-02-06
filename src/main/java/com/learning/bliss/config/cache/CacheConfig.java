@@ -6,7 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.learning.bliss.config.threadPool.ThreadPoolExecutorFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
@@ -27,6 +30,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Component
+@EnableConfigurationProperties(CacheProperties.class)
 public class CacheConfig {
 
     private Executor cacheExecutor = ThreadPoolExecutorFactory.threadPoolExecutor5;
@@ -44,11 +48,30 @@ public class CacheConfig {
                 .maximumSize(1000);
     }
 
+    @Bean
+    public RedisCacheConfiguration createConfiguration(CacheProperties cacheProperties) {
+        log.info("实例化org.springframework.data.redis.cache.RedisCacheConfiguration对象");
+        CacheProperties.Redis cachePropertiesRedis = cacheProperties.getRedis();
+        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig();
+
+        if (cachePropertiesRedis.getTimeToLive() != null) {
+            config = config.entryTtl(cachePropertiesRedis.getTimeToLive());
+        }
+        if (cachePropertiesRedis.getKeyPrefix() != null) {
+            config = config.prefixCacheNameWith(cachePropertiesRedis.getKeyPrefix());
+        }
+        if (!cachePropertiesRedis.isCacheNullValues()) {
+            config = config.disableCachingNullValues();
+        }
+        if (!cachePropertiesRedis.isUseKeyPrefix()) {
+            config = config.disableKeyPrefix();
+        }
+        return config;
+    }
 
     /**
      * 设置Redis缓存管理器RedisCacheManager对象的序列化方式
      * @param redisCacheConfiguration
-     * @param factory
      * @return
      */
     @Bean

@@ -2,11 +2,9 @@ package com.learning.bliss.config.redis;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.connection.RedisNode;
 import org.springframework.data.redis.connection.RedisPassword;
@@ -31,7 +29,7 @@ import java.util.List;
  * @Version 0.1
  */
 @Profile("sentinel")
-@EnableConfigurationProperties({RedisProperties.class, CacheProperties.class})
+@EnableConfigurationProperties(RedisProperties.class)
 @Component
 @Slf4j
 public class JedisSentinelConfig {
