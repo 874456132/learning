@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest
-@ActiveProfiles("standalone")
+//@ActiveProfiles("standalone")
 public class RedisKeyspaceNotifications {
     @Autowired
     private StringRedisTemplate stringRedisTemplate;

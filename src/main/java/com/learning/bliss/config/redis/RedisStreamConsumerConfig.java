@@ -5,6 +5,7 @@ import com.learning.bliss.bean.redis.StreamMessage;
 import com.learning.bliss.utils.RedisUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,6 +37,7 @@ import java.util.concurrent.ForkJoinPool;
  * @Version 1.0
  */
 @Slf4j
+@ConditionalOnProperty(name = "spring.redis.switch", havingValue = "on")
 @Configuration
 public class RedisStreamConsumerConfig implements DisposableBean {
 

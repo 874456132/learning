@@ -2,6 +2,7 @@ package com.learning.bliss.listener.redis;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.listener.KeyExpirationEventMessageListener;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
  * @Version 1.0
  */
 @Component
+@ConditionalOnProperty(name = "spring.redis.switch", havingValue = "on")
 public class RedisKeyExpirationListener extends KeyExpirationEventMessageListener {
 
     public RedisKeyExpirationListener(RedisMessageListenerContainer listenerContainer) {

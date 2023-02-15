@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.connection.stream.ObjectRecord;
 import org.springframework.data.redis.connection.stream.RecordId;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -25,6 +26,7 @@ import java.time.format.DateTimeFormatter;
 @Slf4j
 @Getter
 @Setter
+@ConditionalOnProperty(name = "spring.redis.switch", havingValue = "on")
 public class ConsumeStreamListener implements StreamListener<String, ObjectRecord<String, StreamMessage>> {
 
     @Autowired

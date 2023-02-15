@@ -8,6 +8,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.cache.CacheManagerCustomizers;
 import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
@@ -30,6 +31,7 @@ import java.util.Objects;
  * @Date 2023/1/16 20:00
  * @Version 1.0
  */
+@ConditionalOnProperty(name = "spring.redis.switch", havingValue = "on")
 @Configuration(proxyBeanMethods = false)
 @EnableCaching
 @Slf4j

@@ -8,6 +8,7 @@ import com.learning.bliss.config.threadPool.ThreadPoolExecutorFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -29,6 +30,7 @@ import java.util.concurrent.TimeUnit;
  * @Version 1.0
  */
 @Slf4j
+@ConditionalOnProperty(name = "spring.redis.switch", havingValue = "on")
 @Component
 @EnableConfigurationProperties(CacheProperties.class)
 public class CacheConfig {

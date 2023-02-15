@@ -28,6 +28,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
  * spring redis节点配置查看 {@link RedisProperties}
  * SpringBoot自动配置机制查看{@link org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration}
  */
+@ConditionalOnProperty(name = "spring.redis.switch", havingValue = "on")
 @Configuration(proxyBeanMethods = false)
 @Slf4j
 public class RedisManager {
@@ -37,9 +38,9 @@ public class RedisManager {
      * @return RedisTemplate<String, Object>
      */
     @Bean
-    public RedisTemplate<Object, Object> redisTemplate(RedisConnectionFactory factory) {
+    public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory factory) {
         log.info("设置RedisTemplate对象的序列化方式");
-        RedisTemplate<Object, Object> redisTemplate = new RedisTemplate<>();
+        RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
         // 配置连接工厂
         redisTemplate.setConnectionFactory(factory);
         //使用Jackson2JsonRedisSerializer来序列化和反序列化redis的value值（默认使用JDK的序列化方式）
