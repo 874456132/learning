@@ -20,7 +20,7 @@ public class DecimalFormatDemo {
 
     public static void main(String[] args) {
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(1000);
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 10000; i++) {
             DecimalFormatDemo.RunnableImpl t = new DecimalFormatDemo.RunnableImpl();
             executor.submit(t);
         }

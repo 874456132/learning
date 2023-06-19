@@ -10,7 +10,7 @@ import java.util.concurrent.*;
  * @Version 1.0
  */
 public class CyclicBarrierTest {
-    private final static CyclicBarrier cyclicBarrier = new CyclicBarrier(3);
+    private final static CyclicBarrier cyclicBarrier = new CyclicBarrier(2);
     private final static ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(12);
 
     public static void main(String[] args) {
@@ -19,14 +19,16 @@ public class CyclicBarrierTest {
     }
 
     private void threadCyclicRun() {
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < 12; i++) {
             executor.submit(new Thread(() -> {
                 try {
+                    Thread.sleep(2000);
                     System.out.println(Thread.currentThread().getName() + "创建工作线程");
                     cyclicBarrier.await();
+                    Thread.sleep(2000);
                     System.out.println(Thread.currentThread().getName() + "开始执行");
                     // 工作线程开始处理，这里用Thread.sleep()来模拟业务处理
-                    Thread.sleep(1000);
+                    Thread.sleep(2000);
                     System.out.println(Thread.currentThread().getName() + "执行完毕");
                 } catch (Exception e) {
                     e.printStackTrace();

@@ -1,6 +1,6 @@
 package com.learning.bliss.demo.redis.queue.stream;
 
-import com.learning.bliss.client.redis.ProduceStreamClient;
+import com.learning.bliss.api.redis.ProduceStreamClient;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**

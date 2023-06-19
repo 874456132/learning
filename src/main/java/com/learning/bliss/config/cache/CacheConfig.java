@@ -30,13 +30,12 @@ import java.util.concurrent.TimeUnit;
  * @Version 1.0
  */
 @Slf4j
-@ConditionalOnProperty(name = "spring.redis.switch", havingValue = "on")
 @Component
 @EnableConfigurationProperties(CacheProperties.class)
 public class CacheConfig {
 
     private Executor cacheExecutor = ThreadPoolExecutorFactory.threadPoolExecutor5;
-
+    @ConditionalOnProperty(name = "spring.cache.switch", havingValue = "on")
     @Bean
     public Caffeine<Object, Object> caffeineCacheConfig() {
         return Caffeine.newBuilder()
@@ -50,6 +49,7 @@ public class CacheConfig {
                 .maximumSize(1000);
     }
 
+    @ConditionalOnProperty(name = "spring.redis.switch", havingValue = "on")
     @Bean
     public RedisCacheConfiguration createConfiguration(CacheProperties cacheProperties) {
         log.info("实例化org.springframework.data.redis.cache.RedisCacheConfiguration对象");
@@ -76,6 +76,7 @@ public class CacheConfig {
      * @param redisCacheConfiguration
      * @return
      */
+    @ConditionalOnProperty(name = "spring.redis.switch", havingValue = "on")
     @Bean
     public RedisCacheConfiguration redisCacheConfiguration(RedisCacheConfiguration redisCacheConfiguration) {
 
@@ -110,6 +111,7 @@ public class CacheConfig {
      * @param redisCacheConfiguration
      * @return RedisCacheManager
      */
+    @ConditionalOnProperty(name = "spring.redis.switch", havingValue = "on")
     @ConditionalOnMissingBean(RedisCacheConfiguration.class)
     RedisCacheConfiguration redisCacheConfig(RedisCacheConfiguration redisCacheConfiguration) {
 

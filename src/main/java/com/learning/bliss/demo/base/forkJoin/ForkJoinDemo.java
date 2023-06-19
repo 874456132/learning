@@ -22,7 +22,7 @@ public class ForkJoinDemo {
 
     /**
      * 任务Task类
-     * RecursiveTask-有返回结果的递归任务{@link java.util.concurrent.RecursiveTask}
+     * RecursiveTask [rɪˈkɜːsɪv]-有返回结果的递归任务{@link java.util.concurrent.RecursiveTask}
      * RecursiveAction-无返回结果的递归任务{@link java.util.concurrent.RecursiveAction}
      */
     private static class SumTask extends RecursiveTask<Integer> {

@@ -6,14 +6,9 @@ import com.learning.bliss.demo.cache.CaffeineCacheHandle;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
-import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.test.context.junit4.SpringRunner;
-
-import javax.annotation.Resource;
-import java.util.Arrays;
 
 /**
  * @Author xuexc
@@ -30,8 +25,6 @@ public class CaffeineCacheTest {
     private Caffeine<Object, Object> caffeineCacheConfig;
     @Autowired
     private CaffeineCacheManager caffeineCacheManager;
-    @Autowired
-    private RedisCacheManager redisCacheManager;
 
     @Test
     public void multBeanTest() {
@@ -39,7 +32,6 @@ public class CaffeineCacheTest {
 
         System.out.println("caffeineCacheManager    " + caffeineCacheManager.getClass().toString());
 
-        System.out.println("redisCacheManager    " + redisCacheManager.getClass().toString());
     }
 
     @Test

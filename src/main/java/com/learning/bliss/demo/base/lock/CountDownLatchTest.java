@@ -64,6 +64,7 @@ public class CountDownLatchTest {
                     Thread.sleep(100);
                     System.out.println((finalI + 1) + " 号选手准备就绪");
                     begin.await();
+
                     System.out.println((finalI + 1) + " 号选手加油中");
                     Thread.sleep(1000);
                     System.out.println((finalI + 1) + " 号选手到达终点");

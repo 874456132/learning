@@ -25,8 +25,9 @@ public class NettyTest {
     @Test
     public void byteBufTest() {
         //1、把消息内容通过Netty自带的缓存工具类转换成ByteBuf对象
-        byte[] msg = "【有梦想的肥宅】".getBytes(StandardCharsets.UTF_8);
+        byte[] msg = "有梦想的肥宅".getBytes(StandardCharsets.UTF_8);
         //ByteBuf byteBuf = ByteBufAllocator.DEFAULT.heapBuffer(msg.length);
+        System.out.println("msg.length : " + msg.length);
         ByteBuf byteBuf = Unpooled.buffer(msg.length);
         byteBuf.writeBytes(msg);
 
@@ -60,6 +61,7 @@ public class NettyTest {
         System.out.println("2、开始调用readBytes()方法从ByteBuf中读出数据:" + new String(readBytes, StandardCharsets.UTF_8));
         //PS：Netty使用了堆外内存，而堆外内存不能被JVM的垃圾回收器回收，所以需要我们手动回收【手动释放内存】
         //PS：ByteBuf是通过引用计数的方式管理的，所以需要调用release()方法把引用计数设置为0，才能直接回收内存
+        System.out.println(" 当前引用计数：" + byteBuf.refCnt());
         System.out.println("3、开始调用retain()方法增加引用计数:" + byteBuf.retain());
         System.out.println("4、开始多次调用release()方法直至内存释放:");
         System.out.println("    4.1 释放引用前：byteBuf的状态：" + byteBuf);
@@ -82,14 +84,14 @@ public class NettyTest {
         ByteBuf slice = byteBufN.slice();
         System.out.println("2、调用slice()方法复制对象:" + slice);
         System.out.println("    2.1 调用slice()方法有以下特点:");
-        System.out.println("        2.1.1 最大容量为原byteBuf的可读容量【新对象的maxCapacity = 原对象的readableBytes()】");
+        System.out.println("        2.1.1 默认截取 readerIndex 到 writerIndex 之间的数据,最大容量为原byteBuf的可读容量【新对象的maxCapacity = 原对象的readableBytes()】");
         System.out.println("        2.1.2 底层内存和引用计数与原始的byteBuf共享，但读写指针不同");
         System.out.println("        2.1.3 不复制数据，只通过改变读写指针来改变读写行为");
         System.out.println("        2.1.4 不改变原byteBuf的引用计数，当原byteBuf调用release()方法时，slice()出来的对象也会被释放");
         ByteBuf duplicate = byteBufN.duplicate();
         System.out.println("3、调用duplicate()方法复制对象:" + duplicate);
         System.out.println("    3.1 调用duplicate()方法有以下特点:");
-        System.out.println("        3.1.1 最大容量、数据内容、指针位置都和原来的byteBuf一样【整个新的byteBuf都和原byteBuf共享】");
+        System.out.println("        3.1.1 duplicate()截取的是整个原始 ByteBuf 信息，最大容量、数据内容、指针位置都和原来的byteBuf一样【整个新的byteBuf都和原byteBuf共享】");
         System.out.println("        3.1.2 底层内存和引用计数与原始的byteBuf共享，但读写指针不同");
         System.out.println("        3.1.3 不复制数据，只通过改变读写指针来改变读写行为");
         System.out.println("        3.1.4 不改变原byteBuf的引用计数，当原byteBuf调用release()方法时，slice()出来的对象也会被释放");

@@ -1,14 +1,11 @@
 package com.learning.bliss.redis.queue;
 
-import com.learning.bliss.client.redis.ProduceStreamClient;
-import com.learning.bliss.demo.redis.queue.pubsub.PubClient;
-import com.learning.bliss.demo.redis.queue.pubsub.SubClient;
+import com.learning.bliss.api.redis.ProduceStreamClient;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 /**

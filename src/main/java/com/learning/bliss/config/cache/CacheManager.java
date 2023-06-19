@@ -31,7 +31,6 @@ import java.util.Objects;
  * @Date 2023/1/16 20:00
  * @Version 1.0
  */
-@ConditionalOnProperty(name = "spring.redis.switch", havingValue = "on")
 @Configuration(proxyBeanMethods = false)
 @EnableCaching
 @Slf4j
@@ -39,6 +38,7 @@ public class CacheManager {
 
     final String [] cacheName = {"CustInfo", "AcctInfo"};
 
+    @ConditionalOnProperty(name = "spring.cache.switch", havingValue = "on")
     @Bean
     public CaffeineCacheManager caffeineCacheManager(Caffeine<Object, Object> caffeineCache) {
         CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager();
@@ -56,6 +56,7 @@ public class CacheManager {
      * @param factory
      * @return
      */
+    @ConditionalOnProperty(name = "spring.redis.switch", havingValue = "on")
     @Primary
     @Bean
     public RedisCacheManager redisCacheManager(RedisCacheConfiguration redisCacheConfiguration, RedisConnectionFactory factory) {
@@ -81,6 +82,7 @@ public class CacheManager {
      * @param factory
      * @return RedisCacheManager
      */
+    @ConditionalOnProperty(name = "spring.redis.switch", havingValue = "on")
     @ConditionalOnMissingBean(RedisCacheManager.class)
     public RedisCacheManager redisCacheManager(CacheManagerCustomizers cacheManagerCustomizers, RedisCacheConfiguration redisCacheConfiguration,
                                    ObjectProvider<RedisCacheManagerBuilderCustomizer> redisCacheManagerBuilderCustomizers,

@@ -1,4 +1,4 @@
-package com.learning.bliss.client.redis;
+package com.learning.bliss.api.redis;
 
 import com.learning.bliss.bean.redis.StreamMessage;
 import lombok.extern.slf4j.Slf4j;
